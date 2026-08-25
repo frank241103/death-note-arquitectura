@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import VictimCard from "../../components/list-card/dn-card";
 import "./dn-list.css";
 import type { Kill } from "../../types/Kill";
-const BACKEND = import.meta.env.FRONT_BACKEND;
+const BACKEND = import.meta.env.VITE_FRONT_BACKEND;
 
 export default function VictimList() {
   const [searchTerm, setSearchTerm] = useState("");

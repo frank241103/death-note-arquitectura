@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import './kill-register.css';
 import Button from '../../components/button/button';
 import type { Person } from '../../types/person';
-const BACKEND = import.meta.env.FRONT_BACKEND;
+const BACKEND = import.meta.env.VITE_FRONT_BACKEND;
 export default function KillRegister() {
   const [formData, setFormData] = useState<Person>({
     fullName: '',
