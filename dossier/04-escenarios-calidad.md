@@ -33,7 +33,7 @@ FUENTE → ESTÍMULO → ARTEFACTO → AMBIENTE → RESPUESTA → MEDIDA
 | **Artefacto** | Endpoint GET /death, handler en back/server/kill_handlers.go:35 |
 | **Ambiente** | SQLite local (test.db), máquina personal, 60 segundos sostenidos |
 | **Respuesta Esperada** | p95 de latencia < 500 ms, tasa de error < 1% |
-| **Respuesta Actual** | p95 = 1111.83 ms, error rate = 0% (Ejecutado 2026-08-24, commit d3e06e6) |
+| **Respuesta Actual** | p95 = 1114.69 ms (mediana), error rate = 0% (Ejecutado 2026-08-24, commit d3e06e6) |
 | **Medida** | Percentil 95 de latencia (ms), tasa de error (%) |
 
 ### 1.2 Justificación del Umbral (500 ms)
@@ -375,7 +375,7 @@ srv := &http.Server{
 |---------|-------|--------|------|
 | Requests completados | 1559 | count | Descartada (warmup) |
 | p50 latencia | 426.73 | ms | — |
-| p95 latencia | 1570 | ms | **Fuera de umbral** |
+| p95 latencia | 1578.71 | ms | **Fuera de umbral** |
 | p99 latencia | 2047 | ms | — |
 | Error rate | 0 | % | Zero errors |
 
@@ -385,7 +385,7 @@ srv := &http.Server{
 |---------|-------|--------|---|
 | Requests completados | 1350 | count | — |
 | p50 latencia | 526.31 | ms | — |
-| p95 latencia | 1610 | ms | ✗ 1610 ≥ 500 |
+| p95 latencia | 1615.73 | ms | ✗ 1615.73 ≥ 500 |
 | p99 latencia | 2134 | ms | — |
 | Error rate | 0 | % | ✓ 0 < 1 |
 
@@ -395,7 +395,7 @@ srv := &http.Server{
 |---------|-------|--------|---|
 | Requests completados | 2205 | count | — |
 | p50 latencia | 176.45 | ms | — |
-| p95 latencia | 613.65 | ms | ✗ 613.65 ≥ 500 |
+| p95 latencia | 613.66 | ms | ✗ 613.66 ≥ 500 |
 | p99 latencia | 1289 | ms | — |
 | Error rate | 0 | % | ✓ 0 < 1 |
 
@@ -403,7 +403,7 @@ srv := &http.Server{
 
 | Métrica | Corrida 2 | Corrida 3 | Mediana | Resultado |
 |---------|----------|----------|---------|-----------|
-| p95 latencia (ms) | 1610 | 613.65 | **1111.83** | ✗ **NO CUMPLE** |
+| p95 latencia (ms) | 1615.73 | 613.66 | **1114.69** | ✗ **NO CUMPLE** |
 | Error rate (%) | 0 | 0 | **0** | ✓ CUMPLE |
 
 ---
@@ -415,11 +415,11 @@ srv := &http.Server{
 **Resultado de medición:**
 
 ```
-Mediana p95 latencia (run-2, run-3) = 1111.83 ms
+Mediana p95 latencia (run-2, run-3) = 1114.69 ms
 Umbral = 500 ms
 
-✗ 1111.83 >= 500 → NO CUMPLE
-Brecha: +611.83 ms (2.2× sobre umbral)
+✗ 1114.69 >= 500 → NO CUMPLE
+Brecha: +614.69 ms (2.23× sobre umbral)
 ```
 
 **Observaciones clave:**
@@ -434,9 +434,10 @@ Brecha: +611.83 ms (2.2× sobre umbral)
    - No hay timeouts, conexiones rechazadas, ni fallos
 
 3. **Alta variabilidad entre corridas (factor 2.6×).**
-   - Run-2: p95 = 1610 ms
-   - Run-3: p95 = 613.65 ms
+   - Run-2: p95 = 1615.73 ms
+   - Run-3: p95 = 613.66 ms
    - Causa: Contención de CPU (k6, backend, SQLite en misma máquina)
+   - **[EVIDENCIA FALTANTE]** El procesador (Intel i7-1255U) es de la serie U diseñado para portátiles. Bajo carga sostenida reduce frecuencia por gestión térmica. Esto es una explicación plausible de la variabilidad, pero NO fue verificada: no se registró frecuencia de CPU ni temperatura durante las corridas.
 
 4. **Raíz del problema identificada: handleGetAllKills sin paginación.**
    - Busca `back/server/kill_handlers.go:35` — GET /death trae TODOS los 3302 registros

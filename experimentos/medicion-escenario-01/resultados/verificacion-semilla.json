@@ -1,0 +1,12 @@
+{
+  "captured_at_utc": "2026-08-24T14:32:15Z",
+  "git_revision": "d3e06e6",
+  "verification_method": "Consulta GET /death contando elementos del array JSON devuelto",
+  "database_engine": "SQLite via glebarez/sqlite",
+  "database_file": "back/test.db",
+  "seeded_records": 3302,
+  "response_size_kb": 557,
+  "seed_method": "3300 peticiones POST /death con multipart/form-data vía curl, más 2 registros preexistentes",
+  "matches_preregistered_seed": true,
+  "notes": "Volumen de datos significativo para línea base (no perfección de caché en 1 registro). Respuesta de 557 KB sin paginación es la causa raíz del incumplimiento de umbral p95 < 500 ms."
+}

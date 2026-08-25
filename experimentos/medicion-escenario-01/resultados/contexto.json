@@ -1,0 +1,24 @@
+{
+  "captured_at_utc": "2026-08-24T14:32:15Z",
+  "git_revision": "d3e06e6",
+  "machine": {
+    "manufacturer": "HP",
+    "model": "ProBook 440 14 inch G9 Notebook PC",
+    "processor": "12th Gen Intel(R) Core(TM) i7-1255U",
+    "logical_cpus": 12,
+    "physical_memory_gb": 31.6,
+    "operating_system": "Windows 11",
+    "architecture": "AMD64"
+  },
+  "deployment_topology": {
+    "shared_physical_machine": true,
+    "load_generator": "k6 nativo en Windows",
+    "api": "Go nativo (go run main.go)",
+    "database": "SQLite archivo local (back/test.db)"
+  },
+  "load_tool": {
+    "name": "k6",
+    "version": "v2.2.0",
+    "version_details": "commit/00a9a1b7f5, go1.26.5, windows/amd64"
+  }
+}

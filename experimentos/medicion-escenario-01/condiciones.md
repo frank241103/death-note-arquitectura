@@ -45,12 +45,17 @@
 
 | Componente | Especificación |
 |-----------|---|
-| **CPU** | Intel Core i7-10700K (8 cores, 16 threads @ 3.8 GHz) |
-| **RAM** | 32 GB DDR4 |
-| **Sistema Operativo** | Windows 11 Pro 10.0.26200 |
+| **Fabricante y modelo** | HP ProBook 440 14 inch G9 Notebook PC |
+| **Procesador** | 12th Gen Intel(R) Core(TM) i7-1255U |
+| **CPUs lógicas** | 12 |
+| **Memoria física** | 31.6 GB |
+| **Sistema Operativo** | Windows 11 |
+| **Arquitectura** | AMD64 |
 | **Contención de recursos** | ✅ **Confirmada: k6 y backend comparten máquina** |
 
-**Contexto:** k6 corre en la misma máquina que el backend y SQLite. Hay contención de recursos (CPU, memoria, I/O disco). Este es un escenario realista de desarrollo local pero no aislado. La variabilidad entre corridas (2.6×) se atribuye principalmente a contención de CPU durante medición.
+**Contexto:** k6 corre en la misma máquina que el backend y SQLite. Hay contención de recursos (CPU, memoria, I/O disco). Este es un escenario realista de desarrollo local pero no aislado. El procesador (i7-1255U) es de la serie U diseñado para portátiles; bajo carga sostenida reduce frecuencia por gestión térmica, lo que explica parcialmente la variabilidad entre corridas.
+
+**Método de captura:** Get-CimInstance Win32_Processor y Win32_ComputerSystem (PowerShell), ejecutado 2026-08-24.
 
 ---
 
@@ -59,8 +64,10 @@
 | Parámetro | Valor |
 |-----------|-------|
 | **Herramienta** | k6 (Grafana Load Testing Platform) |
-| **Versión** | v0.49.0 |
+| **Versión** | v2.2.0 (commit/00a9a1b7f5, go1.26.5, windows/amd64) |
 | **Script** | experimentos/medicion-escenario-01/scripts/baseline.js |
+
+**Método de captura:** `k6 version`, ejecutado 2026-08-24.
 
 ---
 

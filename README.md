@@ -126,7 +126,7 @@ npm run dev
 | 02-stakeholders-drivers.md | 6 stakeholders, 4 drivers priorizados, trade-offs | ✅ Completado | [dossier/02-stakeholders-drivers.md](dossier/02-stakeholders-drivers.md) |
 | 03-atributos-calidad.md | 6 atributos operacionalizables, decisiones IA registradas | ✅ Completado | [dossier/03-atributos-calidad.md](dossier/03-atributos-calidad.md) |
 | 04-escenarios-calidad.md | 5 escenarios (ESC-01 a ESC-05), línea base | ✅ Completado | [dossier/04-escenarios-calidad.md](dossier/04-escenarios-calidad.md) |
-| Medición de línea base | ESC-01 (Rendimiento k6) — 3 corridas, mediana p95 = 1111.83 ms | ✅ Completado | [dossier/04-escenarios-calidad.md#9-tabla-de-resultados-ejecutado-2026-08-24](dossier/04-escenarios-calidad.md#9-tabla-de-resultados-ejecutado-2026-08-24) |
+| Medición de línea base | ESC-01 (Rendimiento k6) — 3 corridas, mediana p95 = 1114.69 ms | ✅ Completado | [dossier/04-escenarios-calidad.md#9-tabla-de-resultados-ejecutado-2026-08-24](dossier/04-escenarios-calidad.md#9-tabla-de-resultados-ejecutado-2026-08-24) |
 
 ---
 
@@ -140,16 +140,16 @@ npm run dev
 
 | Corrida | Requests | p95 latencia (ms) | p99 latencia (ms) | Error rate | Nota |
 |---------|----------|---|---|---|---|
-| **Warmup (descartada)** | 1559 | 1570 | 2047 | 0% | Calentamiento |
-| **Run-2 (válida)** | 1350 | 1610 | 2134 | 0% | — |
-| **Run-3 (válida)** | 2205 | 613.65 | 1289 | 0% | Menos carga CPU |
-| **Mediana (run-2, run-3)** | — | **1111.83** | — | **0%** | **Resultado final** |
+| **Warmup (descartada)** | 1559 | 1578.71 | 2047 | 0% | Calentamiento |
+| **Run-2 (válida)** | 1350 | 1615.73 | 2134 | 0% | — |
+| **Run-3 (válida)** | 2205 | 613.66 | 1289 | 0% | Menos carga CPU |
+| **Mediana (run-2, run-3)** | — | **1114.69** | — | **0%** | **Resultado final** |
 
 ### Veredicto: ✗ **NO CUMPLE**
 
 - **Umbral prerregistrado:** p95 < 500 ms (ADR-004)
-- **Mediana observada:** 1111.83 ms
-- **Brecha:** +611.83 ms (2.2× sobre umbral)
+- **Mediana observada:** 1114.69 ms
+- **Brecha:** +614.69 ms (2.23× sobre umbral)
 - **Tasa de error:** 0% (cumple perfectamente)
 
 ### Observaciones Clave
@@ -161,6 +161,8 @@ npm run dev
 3. **Variabilidad de 2.6× entre corridas:** Causada por contención de CPU (k6, backend, SQLite comparten máquina). Run-3 más rápida (613.65 ms) que run-2 (1610 ms).
 
 4. **Error rate perfecto (0%):** Sistema es lento, no inestable. Sin timeouts ni fallos de conexión.
+
+5. **[EVIDENCIA FALTANTE] Thermal throttling del procesador:** El i7-1255U es de la serie U (bajo consumo). Bajo carga sostenida reduce frecuencia por gestión térmica. Explica parcialmente variabilidad (factor 2.6× entre runs), pero no fue verificada con mediciones de CPU frequency ni temperatura.
 
 ### Documentación Asociada
 
