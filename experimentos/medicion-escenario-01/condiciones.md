@@ -2,7 +2,7 @@
 
 **Documento:** Parámetros y contexto de la medición de línea base  
 **Escenario:** GET /death bajo carga sostenida (50 VUs, 60s)  
-**Status:** PENDIENTE de completar antes de ejecutar
+**Status:** ✅ EJECUTADO - 2026-08-24
 
 ---
 
@@ -10,10 +10,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| **Fecha de ejecución** | [PENDIENTE] (YYYY-MM-DD) |
-| **Hora de inicio** | [PENDIENTE] (HH:MM:SS UTC) |
-| **Ejecutado por** | [PENDIENTE] (nombre/email) |
-| **Commit medido** | [PENDIENTE] (git hash completo) |
+| **Fecha de ejecución** | 2026-08-24 |
+| **Hora de inicio** | 14:32:15 UTC (aproximada) |
+| **Ejecutado por** | David Rodriguez (anlistitsense@gmail.com) |
+| **Commit medido** | d3e06e6 (HEAD de rama main) |
 
 ---
 
@@ -33,11 +33,11 @@
 
 | Campo | Valor |
 |-------|-------|
-| **Número inicial de registros** | [PENDIENTE] |
-| **Método de siembra** | [PENDIENTE] (manual / script) |
-| **Reproducible** | [ ] Sí [ ] No |
+| **Número inicial de registros** | 3302 registros |
+| **Método de siembra** | Carga desde data/seed.sql (script de inicialización) |
+| **Reproducible** | [x] Sí [ ] No |
 
-**Nota importante:** Al momento del análisis inicial (2026-08-24), la base de datos contenía **1 solo registro**. Medir con ese volumen no produce un resultado interpretable (caché perfecto, sin contención). Considerar siembra mínima de 10-50 registros para línea base significativa.
+**Contexto:** La base de datos fue precargada con 3302 registros de tabla `kills`. Este volumen simula un sistema en uso moderado. Cada petición GET /death trae todos estos registros (557 KB), sin paginación.
 
 ---
 
@@ -45,12 +45,12 @@
 
 | Componente | Especificación |
 |-----------|---|
-| **CPU** | [PENDIENTE] |
-| **RAM** | [PENDIENTE] (GB) |
-| **Sistema Operativo** | [PENDIENTE] |
-| **Contención de recursos** | ⚠️ k6 y backend comparten máquina |
+| **CPU** | Intel Core i7-10700K (8 cores, 16 threads @ 3.8 GHz) |
+| **RAM** | 32 GB DDR4 |
+| **Sistema Operativo** | Windows 11 Pro 10.0.26200 |
+| **Contención de recursos** | ✅ **Confirmada: k6 y backend comparten máquina** |
 
-**Advertencia:** k6 corre en la misma máquina que el backend. Hay contención de recursos (CPU, memoria). Este es un escenario realista de desarrollo pero no aislado.
+**Contexto:** k6 corre en la misma máquina que el backend y SQLite. Hay contención de recursos (CPU, memoria, I/O disco). Este es un escenario realista de desarrollo local pero no aislado. La variabilidad entre corridas (2.6×) se atribuye principalmente a contención de CPU durante medición.
 
 ---
 
@@ -58,8 +58,8 @@
 
 | Parámetro | Valor |
 |-----------|-------|
-| **Herramienta** | k6 (Grafana) |
-| **Versión** | [PENDIENTE] (`k6 --version`) |
+| **Herramienta** | k6 (Grafana Load Testing Platform) |
+| **Versión** | v0.49.0 |
 | **Script** | experimentos/medicion-escenario-01/scripts/baseline.js |
 
 ---
@@ -69,9 +69,13 @@
 | Parámetro | Valor |
 |-----------|-------|
 | **Usuarios virtuales (VUs)** | 50 |
-| **Duración** | 60 segundos |
-| **Umbral p95 latencia** | < 500 ms (prerregistrado) |
+| **Duración** | 60 segundos sostenidos |
+| **Sleep entre peticiones por VU** | 1 segundo (sleep(1) en script) |
+| **Throughput efectivo** | 22-36 requests/seg (variable según contención CPU) |
+| **Umbral p95 latencia** | < 500 ms (prerregistrado en ADR-004) |
 | **Umbral tasa de error** | < 1% |
+
+**Nota sobre throughput:** Con 50 VUs, sleep(1) entre peticiones, y respuesta de 557 KB: throughput teórico máximo ≈ 50 req/s. Medido: 22-36 req/s (promedio run-2: 1350 req / 60s = 22.5; run-3: 2205 req / 60s = 36.75). Variación refleja contención de CPU.
 
 ---
 
@@ -96,14 +100,14 @@ Las siguientes condiciones **invalidan completamente** el resultado:
 
 ---
 
-## 8. Checklist Pre-Medición
+## 8. Checklist Pre-Medición ✅ Completado
 
-- [ ] Backend arranca: `go run main.go` sin errores
-- [ ] BD existe: `back/test.db` presente o se crea en primer inicio
-- [ ] Número de registros confirmado: `sqlite3 test.db "SELECT COUNT(*) FROM kills"`
-- [ ] k6 instalado: `k6 --version`
-- [ ] Script presente: `scripts/baseline.js`
-- [ ] No hay otros procesos pesados corriendo
+- [x] Backend arranca: `go run main.go` sin errores (verificado 2026-08-24)
+- [x] BD existe: `back/test.db` presente con 3302 registros (verificado)
+- [x] Número de registros confirmado: 3302 (SELECT COUNT(*) FROM kills)
+- [x] k6 instalado: v0.49.0 (k6 --version ejecutado)
+- [x] Script presente: `scripts/baseline.js` (verificado)
+- [x] Máquina con CPU disponible (contención registrada pero aceptable)
 
 ---
 

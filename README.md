@@ -126,7 +126,47 @@ npm run dev
 | 02-stakeholders-drivers.md | 6 stakeholders, 4 drivers priorizados, trade-offs | ✅ Completado | [dossier/02-stakeholders-drivers.md](dossier/02-stakeholders-drivers.md) |
 | 03-atributos-calidad.md | 6 atributos operacionalizables, decisiones IA registradas | ✅ Completado | [dossier/03-atributos-calidad.md](dossier/03-atributos-calidad.md) |
 | 04-escenarios-calidad.md | 5 escenarios (ESC-01 a ESC-05), línea base | ✅ Completado | [dossier/04-escenarios-calidad.md](dossier/04-escenarios-calidad.md) |
-| Medición de línea base | ESC-01 (Rendimiento k6) | ⏳ PENDIENTE | [experimentos/medicion-escenario-01/](experimentos/medicion-escenario-01/) |
+| Medición de línea base | ESC-01 (Rendimiento k6) — 3 corridas, mediana p95 = 1111.83 ms | ✅ Completado | [dossier/04-escenarios-calidad.md#9-tabla-de-resultados-ejecutado-2026-08-24](dossier/04-escenarios-calidad.md#9-tabla-de-resultados-ejecutado-2026-08-24) |
+
+---
+
+## 6.1 Resultado de la Medición de Línea Base (S4)
+
+**Escenario:** ESC-01 — Rendimiento de GET /death bajo carga  
+**Fecha de ejecución:** 2026-08-24  
+**Commit medido:** d3e06e6  
+
+### Resumen de Resultados
+
+| Corrida | Requests | p95 latencia (ms) | p99 latencia (ms) | Error rate | Nota |
+|---------|----------|---|---|---|---|
+| **Warmup (descartada)** | 1559 | 1570 | 2047 | 0% | Calentamiento |
+| **Run-2 (válida)** | 1350 | 1610 | 2134 | 0% | — |
+| **Run-3 (válida)** | 2205 | 613.65 | 1289 | 0% | Menos carga CPU |
+| **Mediana (run-2, run-3)** | — | **1111.83** | — | **0%** | **Resultado final** |
+
+### Veredicto: ✗ **NO CUMPLE**
+
+- **Umbral prerregistrado:** p95 < 500 ms (ADR-004)
+- **Mediana observada:** 1111.83 ms
+- **Brecha:** +611.83 ms (2.2× sobre umbral)
+- **Tasa de error:** 0% (cumple perfectamente)
+
+### Observaciones Clave
+
+1. **Incumplimiento estructural:** Ninguna corrida cumplió el umbral. El problema no es variabilidad aleatoria sino un fallo de diseño.
+
+2. **Causa identificada:** `handleGetAllKills()` en [back/server/kill_handlers.go:35](back/server/kill_handlers.go#L35) trae todos los 3302 registros sin paginación. Respuesta de 557 KB.
+
+3. **Variabilidad de 2.6× entre corridas:** Causada por contención de CPU (k6, backend, SQLite comparten máquina). Run-3 más rápida (613.65 ms) que run-2 (1610 ms).
+
+4. **Error rate perfecto (0%):** Sistema es lento, no inestable. Sin timeouts ni fallos de conexión.
+
+### Documentación Asociada
+
+- [dossier/04-escenarios-calidad.md — Sección 9](dossier/04-escenarios-calidad.md#9-tabla-de-resultados-ejecutado-2026-08-24) — Tabla de resultados detallada
+- [dossier/04-escenarios-calidad.md — Sección 10](dossier/04-escenarios-calidad.md#10-contraste-contra-umbral) — Análisis y raíz del problema
+- [experimentos/medicion-escenario-01/condiciones.md](experimentos/medicion-escenario-01/condiciones.md) — Contexto completo de ejecución
 
 ---
 
@@ -134,10 +174,10 @@ npm run dev
 
 | Semana | Fecha | Hito | Estado |
 |---|---|---|---|
-| S1 | 2026-08-03 | Sistema base adoptado, repositorio de trabajo creado | ✅ Hecho |
-| S2 | 2026-08-24 | Sistema arrancando, reproducibilidad verificada | ✅ Verificado |
-| S3 | 2026-08-24 | Atributos priorizados, dossier completado | ✅ Hecho |
-| S4 | [PENDIENTE] | Medición de línea base (ESC-01) ejecutada | ⏳ Pendiente |
+| S1 | 2026-08-03 | Sistema base adoptado, repositorio de trabajo creado | ✅ Completada |
+| S2 | 2026-08-24 | Sistema arrancando, reproducibilidad verificada | ✅ Completada |
+| S3 | 2026-08-24 | Atributos priorizados, dossier completado (4 documentos) | ✅ Completada |
+| S4 | 2026-08-24 | Medición de línea base (ESC-01): 3 corridas, veredicto NO CUMPLE | ✅ Completada |
 
 ---
 

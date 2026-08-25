@@ -22,33 +22,26 @@ import { check, sleep } from 'k6';
 /**
  * Configuración de carga
  *
- * PENDIENTE: El equipo debe justificar estos valores en condiciones.md
+ * Valores prerregistrados en dossier/04-escenarios-calidad.md sección 3.2
  */
 export const options = {
-  // PENDIENTE: ¿Por qué N usuarios virtuales simultáneos?
-  vus: null,  // PENDIENTE (virtual users)
+  // 50 usuarios virtuales concurrentes (prerregistrado en 04-escenarios-calidad.md)
+  vus: 50,
 
-  // PENDIENTE: ¿Por qué N segundos de duración?
-  duration: null,  // PENDIENTE (seconds, e.g., '30s', '5m')
+  // 60 segundos de carga sostenida
+  duration: '60s',
 
-  // PENDIENTE: ¿Cuál es el umbral aceptable de latencia?
   thresholds: {
-    'http_req_duration': [
-      {
-        // PENDIENTE: Justificar umbral de latencia P95
-        threshold: 'p(95) < PENDIENTE',  // ms
-        abortOnFail: false,
-        delayAbortEval: '10s'
-      }
-    ],
-    'checks': [
-      {
-        // PENDIENTE: ¿Qué % de checks deben pasar?
-        threshold: 'rate > PENDIENTE',  // e.g., 0.99 (99%)
-        abortOnFail: true
-      }
-    ]
+    // Umbral prerregistrado: p95 < 500 ms
+    'http_req_duration': ['p(95)<500'],
+
+    // Al menos 99% de los checks deben pasar
+    'checks': ['rate>0.99'],
+
+    // Menos de 1% de peticiones fallidas
+    'http_req_failed': ['rate<0.01'],
   }
+      
 };
 
 /**

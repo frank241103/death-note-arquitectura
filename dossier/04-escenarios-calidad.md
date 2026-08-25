@@ -33,7 +33,7 @@ FUENTE → ESTÍMULO → ARTEFACTO → AMBIENTE → RESPUESTA → MEDIDA
 | **Artefacto** | Endpoint GET /death, handler en back/server/kill_handlers.go:35 |
 | **Ambiente** | SQLite local (test.db), máquina personal, 60 segundos sostenidos |
 | **Respuesta Esperada** | p95 de latencia < 500 ms, tasa de error < 1% |
-| **Respuesta Actual** | [PENDIENTE — ejecutar baseline.js] |
+| **Respuesta Actual** | p95 = 1111.83 ms, error rate = 0% (Ejecutado 2026-08-24, commit d3e06e6) |
 | **Medida** | Percentil 95 de latencia (ms), tasa de error (%) |
 
 ### 1.2 Justificación del Umbral (500 ms)
@@ -367,72 +367,93 @@ srv := &http.Server{
 
 ---
 
-## 9. Tabla de Resultados (Vacía)
+## 9. Tabla de Resultados (Ejecutado 2026-08-24)
 
 ### 9.1 Corrida 1 (Descartada - Calentamiento)
 
 | Métrica | Valor | Unidad | Nota |
 |---------|-------|--------|------|
-| Requests completados | — | count | Descartada |
-| p50 latencia | — | ms | |
-| p95 latencia | — | ms | |
-| p99 latencia | — | ms | |
-| Error rate | — | % | |
+| Requests completados | 1559 | count | Descartada (warmup) |
+| p50 latencia | 426.73 | ms | — |
+| p95 latencia | 1570 | ms | **Fuera de umbral** |
+| p99 latencia | 2047 | ms | — |
+| Error rate | 0 | % | Zero errors |
 
 ### 9.2 Corrida 2 (Válida)
 
 | Métrica | Valor | Unidad | Dentro Umbral |
 |---------|-------|--------|---|
-| Requests completados | [PENDIENTE] | count | — |
-| p50 latencia | [PENDIENTE] | ms | — |
-| p95 latencia | [PENDIENTE] | ms | [PENDIENTE] < 500 |
-| p99 latencia | [PENDIENTE] | ms | — |
-| Error rate | [PENDIENTE] | % | [PENDIENTE] < 1 |
+| Requests completados | 1350 | count | — |
+| p50 latencia | 526.31 | ms | — |
+| p95 latencia | 1610 | ms | ✗ 1610 ≥ 500 |
+| p99 latencia | 2134 | ms | — |
+| Error rate | 0 | % | ✓ 0 < 1 |
 
 ### 9.3 Corrida 3 (Válida)
 
 | Métrica | Valor | Unidad | Dentro Umbral |
 |---------|-------|--------|---|
-| Requests completados | [PENDIENTE] | count | — |
-| p50 latencia | [PENDIENTE] | ms | — |
-| p95 latencia | [PENDIENTE] | ms | [PENDIENTE] < 500 |
-| p99 latencia | [PENDIENTE] | ms | — |
-| Error rate | [PENDIENTE] | % | [PENDIENTE] < 1 |
+| Requests completados | 2205 | count | — |
+| p50 latencia | 176.45 | ms | — |
+| p95 latencia | 613.65 | ms | ✗ 613.65 ≥ 500 |
+| p99 latencia | 1289 | ms | — |
+| Error rate | 0 | % | ✓ 0 < 1 |
 
 ### 9.4 Mediana (Resultado Final)
 
 | Métrica | Corrida 2 | Corrida 3 | Mediana | Resultado |
 |---------|----------|----------|---------|-----------|
-| p95 latencia (ms) | [PENDIENTE] | [PENDIENTE] | **[PENDIENTE]** | ✓ / ✗ |
-| Error rate (%) | [PENDIENTE] | [PENDIENTE] | **[PENDIENTE]** | ✓ / ✗ |
+| p95 latencia (ms) | 1610 | 613.65 | **1111.83** | ✗ **NO CUMPLE** |
+| Error rate (%) | 0 | 0 | **0** | ✓ CUMPLE |
 
 ---
 
 ## 10. Contraste contra Umbral
 
-### 10.1 Verificación (PENDIENTE)
+### 10.1 Verificación (EJECUTADO 2026-08-24)
 
-[PENDIENTE — No se ejecuta hasta que baseline.js esté listo]
-
-**Cuando se haya ejecutado:**
+**Resultado de medición:**
 
 ```
-Mediana p95 latencia = [RESULTADO]
+Mediana p95 latencia (run-2, run-3) = 1111.83 ms
 Umbral = 500 ms
 
-☐ [RESULTADO] < 500 → CUMPLE
-☐ [RESULTADO] >= 500 → FALLA
+✗ 1111.83 >= 500 → NO CUMPLE
+Brecha: +611.83 ms (2.2× sobre umbral)
 ```
+
+**Observaciones clave:**
+
+1. **Incumplimiento estructural, no de calibración.**
+   - Ninguna de las tres corridas cumplió p95 < 500 ms
+   - Run-3 fue la más rápida (p95 = 613.65 ms), aún así 23% sobre umbral
+   - El problema no es variabilidad, es performance base
+
+2. **Error rate perfecto (0% en todas las corridas).**
+   - Sistema es lento, NO inestable
+   - No hay timeouts, conexiones rechazadas, ni fallos
+
+3. **Alta variabilidad entre corridas (factor 2.6×).**
+   - Run-2: p95 = 1610 ms
+   - Run-3: p95 = 613.65 ms
+   - Causa: Contención de CPU (k6, backend, SQLite en misma máquina)
+
+4. **Raíz del problema identificada: handleGetAllKills sin paginación.**
+   - Busca `back/server/kill_handlers.go:35` — GET /death trae TODOS los 3302 registros
+   - Respuesta: 557 KB por petición
+   - En run-3: transferencia total = 1.3 GB (2205 requests × 557 KB)
+   - Sin paginación, el costo crece linealmente con volumen de datos
 
 ### 10.2 Declaración Importante
 
 **[HECHO VERIFICADO]** El umbral (500 ms) fue fijado **ANTES** de ejecutar la medición.
 
-El umbral **NO será ajustado** después de conocer el resultado. Si falla:
-- No diremos "el umbral era demasiado estricto"
-- Diremos "hay un problema estructural en la respuesta"
+El umbral **NO fue ajustado** después de conocer el resultado. El incumplimiento refleja un problema estructural:
+- `handleGetAllKills` debe implementar paginación
+- Respuesta de 557 KB es excesiva para una lista de navegación
+- Alternativamente, reducir volumen de datos por defecto (últimos N registros)
 
-Esto preserva la integridad del experimento.
+**Impacto en arquitectura:** Este hallazgo valida R-07 (falta de paginación en respuestas grandes).
 
 ---
 
