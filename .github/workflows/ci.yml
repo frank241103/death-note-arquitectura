@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build Backend and Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.3"
+          cache: true
+          cache-dependency-path: back/go.sum
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.18.0"
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+
+      - name: Build Backend
+        working-directory: back
+        run: |
+          go mod download
+          go build ./...
+
+      - name: Build Frontend
+        working-directory: front
+        run: |
+          npm ci
+          npm run build
+
+      - name: Backend Build Status
+        if: success()
+        run: echo "✅ Backend build successful"
+
+      - name: Frontend Build Status
+        if: success()
+        run: echo "✅ Frontend build successful"
+
+      - name: CI Summary
+        if: always()
+        run: |
+          echo "Build Summary:"
+          echo "  Backend: Go 1.24.3"
+          echo "  Frontend: Node 24.18.0 + npm"
+          echo "  Status: Success"

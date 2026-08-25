@@ -1,0 +1,84 @@
+{
+  "escenario": "ESC-01",
+  "descripcion": "Rendimiento: latencia sostenida de GET /death bajo carga (50 VUs, 60s)",
+  "commit": "d3e06e6",
+  "fecha_medicion_utc": "2026-08-24T14:32:15Z",
+  "umbral_p95_ms": 500,
+  "corridas": [
+    {
+      "numero": 1,
+      "tipo": "warmup",
+      "estado": "descartada",
+      "razon": "calentamiento del sistema",
+      "requests": 1559,
+      "p50_latencia_ms": 426.73,
+      "p95_latencia_ms": 1578.71,
+      "p99_latencia_ms": 2047,
+      "error_rate_percent": 0,
+      "dentro_umbral": false
+    },
+    {
+      "numero": 2,
+      "tipo": "válida",
+      "estado": "incluida en cálculo de mediana",
+      "requests": 1350,
+      "p50_latencia_ms": 526.31,
+      "p95_latencia_ms": 1615.73,
+      "p99_latencia_ms": 2134,
+      "error_rate_percent": 0,
+      "dentro_umbral": false
+    },
+    {
+      "numero": 3,
+      "tipo": "válida",
+      "estado": "incluida en cálculo de mediana",
+      "requests": 2205,
+      "p50_latencia_ms": 176.45,
+      "p95_latencia_ms": 613.66,
+      "p99_latencia_ms": 1289,
+      "error_rate_percent": 0,
+      "dentro_umbral": false
+    }
+  ],
+  "resultado_final": {
+    "mediana_p95_ms": 1114.69,
+    "cálculo_mediana": "(1615.73 + 613.66) / 2 = 1114.69",
+    "error_rate_mediana": 0,
+    "brecha_ms": 614.69,
+    "factor_sobre_umbral": 2.23,
+    "veredicto": "NO_CUMPLE",
+    "justificacion": "Mediana p95 = 1114.69 ms > umbral 500 ms. Incumplimiento estructural causado por handleGetAllKills sin paginación (respuesta 557 KB)."
+  },
+  "contexto_medicion": {
+    "semilla_registros": 3302,
+    "tamaño_respuesta_kb": 557,
+    "vus_configurados": 50,
+    "duracion_segundos": 60,
+    "sleep_entre_peticiones_seg": 1,
+    "throughput_efectivo_req_seg": "22-36 (variable por contención CPU)"
+  },
+  "máquina": {
+    "fabricante": "HP",
+    "modelo": "ProBook 440 14 inch G9 Notebook PC",
+    "procesador": "12th Gen Intel(R) Core(TM) i7-1255U",
+    "cpus_logicas": 12,
+    "memoria_fisica_gb": 31.6,
+    "sistema_operativo": "Windows 11",
+    "arquitectura": "AMD64"
+  },
+  "instrumento": {
+    "nombre": "k6",
+    "version": "v2.2.0",
+    "version_detalles": "commit/00a9a1b7f5, go1.26.5, windows/amd64"
+  },
+  "evidencia_faltante": [
+    "CPU frequency durante medición (explicaría variabilidad 2.6× entre run-2 y run-3, pero no verificada)"
+  ],
+  "referencias": {
+    "dossier_04_escenarios": "dossier/04-escenarios-calidad.md (secciones 9-10)",
+    "condiciones_medicion": "experimentos/medicion-escenario-01/condiciones.md",
+    "script_medicion": "experimentos/medicion-escenario-01/scripts/baseline.js",
+    "contexto_máquina": "experimentos/medicion-escenario-01/resultados/contexto.json",
+    "verificacion_semilla": "experimentos/medicion-escenario-01/resultados/verificacion-semilla.json"
+  }
+}

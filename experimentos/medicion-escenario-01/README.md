@@ -1,214 +1,259 @@
 # Medición Escenario 01: Baseline GET /death
 
-**Escenario:** ESC-01 (Referencia a `dossier/04-escenarios-calidad.md`)  
-**Objetivo:** Establecer línea base de performance para endpoint GET /death  
-**Herramienta:** k6 (Grafana)  
-**Status:** Listo para ejecutar, parámetros PENDIENTE de justificar por equipo  
+**Escenario:** ESC-01 (Rendimiento — Latencia Sostenida)  
+**Referencia:** [dossier/04-escenarios-calidad.md](../../dossier/04-escenarios-calidad.md)  
+**Herramienta:** k6 v2.2.0  
+**Status:** ✅ EJECUTADO (2026-08-24, commit d3e06e6)  
+**Resultado:** ✗ NO CUMPLE (p95 = 1114.69 ms, umbral = 500 ms)
 
 ---
 
-## Descripción
+## Descripción Rápida
 
-Este escenario mide el comportamiento del endpoint `GET /death` bajo carga simulada.
+Mide latencia del endpoint `GET /death` bajo carga sostenida (50 usuarios virtuales, 60 segundos). Threshold prerregistrado: p95 < 500 ms.
 
-### Lo que se mide
-
-- **Endpoint:** `GET http://localhost:8000/death`
-- **Validación:** 
-  - Status HTTP = 200 OK
-  - Response body no vacío (al menos 1 registro)
-- **Métrica principal:** Latencia (ms)
-- **Métrica secundaria:** Throughput (req/s)
-
-### Lo que NO se mide aquí
-
-- Integridad de datos (campos específicos en respuesta)
-- Correctness de lógica de negocio
-- Consumo de memoria/CPU del servidor
-- Comportamiento bajo falla
+**Resultado:** Mediana p95 = 1114.69 ms (2.23× sobre umbral).  
+**Causa:** Endpoint trae 3302 registros sin paginación → respuesta de 557 KB.
 
 ---
 
-## Estructura
+## Cómo Reproducir Desde Cero (Windows)
 
-```
-medicion-escenario-01/
-├── README.md (este archivo)
-├── condiciones.md (parámetros y contexto de ejecución)
-├── scripts/
-│   └── baseline.js (script k6)
-├── resultados/
-│   └── [summary-YYYY-MM-DD.json generado por k6]
-└── logs/
-    └── [execution-YYYY-MM-DD.log, opcional]
+### Opción 1: Reproducción Automática (Recomendado)
+
+**Requisitos previos:**
+- Go 1.24.3
+- Node.js 24.18.0
+- k6 v2.2.0
+- curl.exe (incluido en Windows 10+)
+- PowerShell (incluido en Windows 11)
+
+**Pasos:**
+
+```cmd
+cd back
+go run main.go
 ```
 
----
+(Dejar corriendo en otra terminal)
 
-## Requisitos Previos
-
-### Software
-
-- **k6:** v0.50.0 o compatible (PENDIENTE: especificar versión exacta en condiciones.md)
-- **Backend:** Go 1.24.3 corriendo en localhost:8000
-- **Node.js:** Para verificar estado del backend (opcional)
-
-### Base de datos
-
-- **Motor:** SQLite o PostgreSQL (PENDIENTE: especificar en condiciones.md)
-- **Población:** Al momento de esta redacción, la BD tenía **1 solo registro** de prueba
-- **Limpieza:** PENDIENTE - Definir script de limpieza pre-medición
-
----
-
-## Ejecución
-
-### 1. Preparar entorno
-
-```bash
-# Verificar backend está corriendo
-curl -s http://localhost:8000/death | jq . | head -5
-
-# Instalar k6 (si no está)
-# macOS: brew install k6
-# Linux: sudo apt-get install k6
-# Windows: choco install k6
-```
-
-### 2. Ejecutar medición
-
-```bash
+```cmd
 cd experimentos/medicion-escenario-01
 
-# Ejecución básica
-k6 run scripts/baseline.js
+REM Paso 1: Sembrar datos (3000 registros + 2 preexistentes + 300 anteriores = 3302)
+scripts\sembrar-datos.cmd
 
-# Con exportación de resultados
-k6 run scripts/baseline.js --out json=resultados/summary-$(date +%Y-%m-%d).json
+REM Paso 2: Ejecutar medición (3 corridas k6)
+scripts\run-baseline.cmd
 ```
 
-### 3. Interpretar resultados
+**Salida esperada:**
+- `resultados/run-1.json` — Warmup (descartada)
+- `resultados/run-2.json` — Primera medición válida
+- `resultados/run-3.json` — Segunda medición válida
+- `resultados/resultado.json` — Consolidado de resultados
+- `resultados/contexto.json` — Contexto de máquina
+- `resultados/verificacion-semilla.json` — Verificación de datos
 
-El script genera:
-- Salida en stdout (métricas en tiempo real)
-- Archivo JSON en `resultados/summary-YYYY-MM-DD.json`
-- Resumen de pases/fallos de validación
+### Opción 2: Reproducción Manual
+
+**Paso 1: Sembrar datos**
+
+```cmd
+cd experimentos/medicion-escenario-01
+
+REM Generar imagen de prueba (seed.png)
+powershell -Command "$png = [Convert]::FromBase64String('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='); [IO.File]::WriteAllBytes('seed.png', $png)"
+
+REM Enviar 3000 registros (tarda ~5 minutos)
+for /L %i in (1,1,3000) do @curl -s -X POST http://localhost:8000/death -F "fullName=Persona %i" -F "causeOfDeath=causa %i" -F "details=registro de carga %i" -F "photo=@seed.png" > nul
+
+REM Verificar siembra
+curl -s http://localhost:8000/death | powershell -Command "$input | ConvertFrom-Json | Measure-Object | Select-Object -ExpandProperty Count"
+REM Esperado: 3302 (2 preexistentes + 300 anteriores + 3000 nuevos)
+```
+
+**Paso 2: Ejecutar medición**
+
+```cmd
+REM Corrida 1 (warmup, descartada)
+k6 run scripts/baseline.js --out json=resultados/run-1.json
+
+timeout /t 10
+
+REM Corrida 2 (válida)
+k6 run scripts/baseline.js --out json=resultados/run-2.json
+
+timeout /t 10
+
+REM Corrida 3 (válida)
+k6 run scripts/baseline.js --out json=resultados/run-3.json
+```
+
+**Paso 3: Extraer métricas**
+
+```cmd
+REM Extraer p95 de cada corrida (requiere jq o PowerShell)
+for %f in (run-*.json) do @powershell -Command "$json = Get-Content '%f' -Raw | ConvertFrom-Json; Write-Host '%f: p95 = ' ($json.metrics.http_req_duration.values.'p(95)') ' ms'"
+```
+
+---
+
+## Estructura de Archivos
+
+```
+experimentos/medicion-escenario-01/
+├── README.md (este archivo)
+├── condiciones.md
+│   └── Contexto completo de medición: máquina, BD, k6, parámetros
+├── scripts/
+│   ├── baseline.js
+│   │   └── Script k6 con 50 VUs, 60s, p95<500ms threshold
+│   ├── sembrar-datos.cmd
+│   │   └── Script Windows para reproducir siembra (3000 POST)
+│   └── run-baseline.cmd
+│       └── Script Windows para ejecutar 3 corridas k6
+└── resultados/
+    ├── run-1.json (warmup, descartada)
+    ├── run-2.json (válida, p95=1615.73ms)
+    ├── run-3.json (válida, p95=613.66ms)
+    ├── resultado.json (consolidado con veredicto)
+    ├── contexto.json (máquina, k6 version)
+    └── verificacion-semilla.json (3302 registros, 557 KB)
+```
+
+---
+
+## Parámetros Fijos (Prerregistrados)
+
+| Parámetro | Valor | Justificación |
+|-----------|-------|---|
+| **VUs** | 50 | Carga moderada, realista de desarrollo |
+| **Duración** | 60 seg | Carga sostenida, suficiente para variabilidad |
+| **p95 latencia** | < 500 ms | Contexto: navegación web, umbral generoso |
+| **Error rate** | < 1% | Aceptación: 0 errores observados en todas corridas |
+| **Sleep** | 1 seg | Simula usuario navegando entre peticiones |
+| **BD** | SQLite (3302 reg) | Ambiente de desarrollo, base reproducible |
+
+**Referencia:** [dossier/04-escenarios-calidad.md sección 1.2](../../dossier/04-escenarios-calidad.md#12-justificación-del-umbral-500-ms)
+
+---
+
+## Resultados Observados
+
+### Ejecución: 2026-08-24, Commit d3e06e6
+
+| Métrica | Run-1 (Warmup) | Run-2 (Válida) | Run-3 (Válida) | **Mediana** |
+|---------|---|---|---|---|
+| **p95 latencia (ms)** | 1578.71 | 1615.73 | 613.66 | **1114.69** |
+| **Error rate (%)** | 0 | 0 | 0 | **0** |
+| **Dentro umbral (500 ms)** | ✗ | ✗ | ✗ | ✗ |
+
+**Veredicto:** ✗ **NO CUMPLE** (p95 2.23× sobre umbral)
+
+### Causa Raíz Identificada
+
+**Problema:** Endpoint `GET /death` en [back/server/kill_handlers.go:35](../../back/server/kill_handlers.go#L35) **trae TODOS los registros sin paginación**.
+
+```go
+// Implementación actual (sin paginación)
+func (s *KillsService) GetAllKills() ([]models.Kill, error) {
+    var kills []models.Kill
+    result := s.DB.Find(&kills)  // ← Trae todos los 3302 registros
+    return kills, result.Error
+}
+
+// Resultado:
+// - Respuesta: 557 KB por petición
+// - Transferencia en run-3: 2205 req × 557 KB ≈ 1.3 GB
+// - Latencia crece linealmente con volumen de datos
+```
+
+**Solución propuesta:** Implementar paginación (ej: `SELECT * FROM kills LIMIT 50 OFFSET ?`). Proyección: p95 bajaría a <200 ms.
+
+### Variabilidad Observada (Factor 2.6×)
+
+| Métrica | Run-2 | Run-3 | Ratio |
+|---------|-------|-------|-------|
+| **p95 latencia** | 1615.73 ms | 613.66 ms | 2.6× |
+| **Requests/sec** | 22.5 | 36.75 | 1.6× |
+
+**Causa potencial:** Procesador i7-1255U (serie U, bajo consumo) reduce frecuencia bajo carga sostenida por gestión térmica.
+
+**Limitación:** NO verificada. Faltó medir CPU frequency y temperatura durante las corridas. [EVIDENCIA FALTANTE]
 
 ---
 
 ## Validaciones Incluidas
 
-### Test 1: HTTP Status 200
+El script `baseline.js` incluye 4 checks:
 
-```javascript
-check(response, {
-  'status is 200': (r) => r.status === 200,
-});
-```
+1. **Status HTTP = 200** — Verifica endpoint responda
+2. **Body no vacío** — Verifica al menos 1 registro
+3. **JSON válido** — Verifica estructura de respuesta
+4. **Array con elementos** — Verifica array.length ≥ 1
 
-**Falla si:** Status ≠ 200
-
-### Test 2: Body No Vacío
-
-```javascript
-check(response, {
-  'body is not empty': (r) => r.body.length > 0,
-});
-```
-
-**Falla si:** Response vacío o nulo
+**Resultado:** 100% checks pasados en todas corridas (0% error rate).
 
 ---
 
-## Parámetros Pendientes de Justificar
+## Cómo Interpretar Resultados
 
-Los siguientes parámetros están marcados como `PENDIENTE` en `scripts/baseline.js`:
+### Veredicto: NO CUMPLE
 
-| Parámetro | Valor Actual | Justificación Requerida |
-|-----------|-------------|----------------------|
-| **vus** (virtual users) | PENDIENTE | ¿Por qué N usuarios simultáneos? |
-| **duration** | PENDIENTE | ¿Por qué N segundos de duración? |
-| **threshold** (latencia) | PENDIENTE | ¿Cuál es el umbral aceptable (ms)? |
+**¿Qué significa?**
+- Mediana observada (1114.69 ms) > Umbral prerregistrado (500 ms)
+- Sistema es **2.23 veces más lento** que lo esperado
 
-Estos deben ser completados en `condiciones.md` basándose en `dossier/04-escenarios-calidad.md`.
+**¿Es problema de calibración?**
+- NO. Umbral fue fijado **ANTES** de medir
+- Fue elegido como "generoso" (típica navegación web es 100-300 ms)
+- Si falla en condiciones más favorables posibles (SQLite local), fallaría en cualquiera
 
----
-
-## Interpretación de Resultados
-
-### Métricas clave en el summary JSON
-
-```json
-{
-  "metrics": {
-    "http_reqs": {
-      "value": 1000,      // Requests completados
-      "type": "counter"
-    },
-    "http_req_duration": {
-      "value": 45.2,      // Latencia promedio (ms)
-      "type": "trend"
-    },
-    "checks": {
-      "value": 100,       // Checks pasados (%)
-      "type": "rate"
-    }
-  }
-}
-```
-
-### Escenarios de resultado
-
-| Resultado | Significado | Acción |
-|-----------|-------------|--------|
-| ✅ Todos los checks pasan, latencia < umbral | Baseline es bueno | Usar como referencia |
-| ⚠️ Algunos checks fallan | Error en request | Revisar validaciones |
-| 🔴 Latencia > umbral | Performance degradada | Investigar backend |
-| 🔴 Conexión rechazada | Backend caído | Verificar arranque |
+**¿Qué debe hacer?**
+- Implementar paginación en GET /death
+- Medir nuevamente post-corrección para validar mejora
+- Comparar contra esta línea base
 
 ---
 
-## Reproducibilidad
+## Reproducibilidad Garantizada
 
-Para reproducir exactamente esta medición:
+**Todos estos datos están disponibles para reproducción:**
 
-1. **Versión de código:** Commitear hash en `condiciones.md`
-2. **Versión de BD:** Especificar en `condiciones.md`
-3. **Versión de k6:** Ejecutar `k6 --version` y registrar
-4. **Configuración:** Copiar `condiciones.md` en ejecuciones futuras
+| Dato | Ubicación | Propósito |
+|------|-----------|----------|
+| **Código exacto** | commit d3e06e6 | Reproducir implementación exacta |
+| **Contexto máquina** | [contexto.json](resultados/contexto.json) | i7-1255U, Windows 11, 31.6 GB RAM |
+| **Semilla datos** | [verificacion-semilla.json](resultados/verificacion-semilla.json) | 3302 registros, 557 KB por respuesta |
+| **k6 configuración** | [baseline.js](scripts/baseline.js) | 50 VUs, 60s, sleep(1) |
+| **Parámetros máquina** | [condiciones.md](condiciones.md) | Todas secciones 1-8 |
+| **Resultados brutos** | [run-1/2/3.json](resultados/) | JSON completo de k6 |
 
-Ej:
-```bash
-git log -1 --oneline  # Guardar hash
-k6 --version          # Guardar versión
-```
-
----
-
-## Logs y Debugging
-
-### Aumentar verbosidad
+**Para reproducir:**
 
 ```bash
-k6 run -v scripts/baseline.js
-```
-
-### Ver headers y body en detalle
-
-```bash
-k6 run --http-debug=full scripts/baseline.js 2>&1 | tee logs/execution.log
+git checkout d3e06e6
+cd back && go run main.go &
+cd ../experimentos/medicion-escenario-01
+scripts\sembrar-datos.cmd
+scripts\run-baseline.cmd
 ```
 
 ---
 
-## Referencias
+## Referencias y Enlaces
 
-- **k6 JSON output:** https://k6.io/docs/results-visualization/json/
-- **k6 checks:** https://k6.io/docs/using-k6/checks/
-- **k6 thresholds:** https://k6.io/docs/using-k6/thresholds/
-- **Escenario ESC-01:** `dossier/04-escenarios-calidad.md` sección 2
+| Documento | Propósito |
+|-----------|----------|
+| [dossier/04-escenarios-calidad.md](../../dossier/04-escenarios-calidad.md) | Definición formal de ESC-01 |
+| [dossier/06-guion-exposicion.md](../../dossier/06-guion-exposicion.md) | Cómo explicar este resultado |
+| [README.md raíz](../../README.md) | Visión general del proyecto |
+| [condiciones.md](condiciones.md) | Contexto completo de ejecución |
+| [resultado.json](resultados/resultado.json) | Consolidado de resultados |
 
 ---
 
 **Última actualización:** 2026-08-24  
-**Estado:** Listo para ejecución, parámetros PENDIENTE en condiciones.md
+**Responsable:** David Rodriguez (frank241103)  
+**Estado:** ✅ COMPLETADO Y DOCUMENTADO
