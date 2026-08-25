@@ -1,0 +1,554 @@
+# 04 - Escenarios de Calidad (ESC-01 a ESC-05)
+
+**Documento:** 04-escenarios-calidad.md  
+**Fecha de creación:** 2026-08-24  
+**Status:** COMPLETADO - 5 escenarios definidos, ESC-01 seleccionado como línea base  
+**Referencia:** 03-atributos-calidad.md (AC-1 a AC-6), experimentos/medicion-escenario-01/ (medición)
+
+---
+
+## Introducción
+
+Este documento define cinco (5) escenarios de calidad, uno por atributo. El formato estándar es:
+
+```
+FUENTE → ESTÍMULO → ARTEFACTO → AMBIENTE → RESPUESTA → MEDIDA
+```
+
+**Escenario seleccionado para línea base:** ESC-01 (Rendimiento)  
+**Razón:** Es el único que produce una magnitud continua; ESC-02 a ESC-05 son binarios (pasan/fallan en una petición)
+
+---
+
+## 1. ESC-01: Rendimiento - Latencia Sostenida (LÍNEA BASE)
+
+### 1.1 Especificación
+
+| Campo | Valor |
+|-------|-------|
+| **ID** | ESC-01 |
+| **Atributo** | AC-5 Latencia (Rendimiento, Prioridad 3) |
+| **Fuente** | 50 usuarios virtuales (k6) |
+| **Estímulo** | Consultando GET /death de forma sostenida |
+| **Artefacto** | Endpoint GET /death, handler en back/server/kill_handlers.go:35 |
+| **Ambiente** | SQLite local (test.db), máquina personal, 60 segundos sostenidos |
+| **Respuesta Esperada** | p95 de latencia < 500 ms, tasa de error < 1% |
+| **Respuesta Actual** | [PENDIENTE — ejecutar baseline.js] |
+| **Medida** | Percentil 95 de latencia (ms), tasa de error (%) |
+
+### 1.2 Justificación del Umbral (500 ms)
+
+**[SUPUESTO]** No existe requisito no-funcional heredado del autor original que fije un valor.
+
+**Tres razones para 500 ms:**
+
+1. **Contexto de uso:** GET /death alimenta la pantalla de listado (`front/src/pages/death-note-list/dn-list.tsx`). Es una interacción de navegación, no operación en segundo plano. Usuarios esperan respuesta rápida al hacer clic. [HECHO VERIFICADO]
+
+2. **Condiciones más favorables posibles:** El sistema corre sobre SQLite **local** sin latencia de red hacia la BD. Si no cumple en estas condiciones (las más favorables), no cumpliría en ninguna otra (PostgreSQL remoto, load, etc). [HECHO VERIFICADO]
+
+3. **Límite deliberadamente laxo:** 500 ms es generoso (orden de magnitud típico para navegación es 100-300 ms). Si falla acá, el problema es **estructural**, no de calibración del umbral. Permite detectar issues reales sin falsos positivos. [INFERENCIA]
+
+### 1.3 Línea Base: Por Qué ESC-01 y No ESC-02 a ESC-05
+
+**[HECHO VERIFICADO]** ESC-02 a ESC-05 son escenarios binarios:
+- Pasan o fallan en UNA petición
+- Resultado ya conocido por inspección de código
+- No producen una "línea base" comparable con futuras ejecuciones
+
+**ESC-01 es el único que:**
+- Produce una magnitud continua (p95 varía entre ejecuciones)
+- Requiere medición instrumental (k6)
+- Genera datos comparables (progresión en el tiempo)
+
+**Tensión declarada:** Rendimiento es prioridad 3 (después de Seguridad y Mantenibilidad), pero aún así es el medido porque es lo medible con instrumental disponible en el plazo del semestre. [INFERENCIA]
+
+---
+
+## 2. ESC-02: Seguridad - Acceso a /static/ sin Autenticación
+
+### 2.1 Especificación
+
+| Campo | Valor |
+|-------|-------|
+| **ID** | ESC-02 |
+| **Atributo** | AC-1 Control de Acceso (Seguridad, Prioridad 1) |
+| **Fuente** | Tercero sin credenciales (usuario anónimo) |
+| **Estímulo** | Petición GET a un archivo bajo /static/ (ej: /static/1722000123_victim.jpg) |
+| **Artefacto** | Ruta `/static/` con http.FileServer (router.go:15) |
+| **Ambiente** | Backend corriendo, sin autenticación configurada |
+| **Respuesta Esperada** | HTTP 401 Unauthorized, negar acceso |
+| **Respuesta Actual** | **HTTP 200 OK, entrega el archivo** |
+| **Medida** | Status code, presencia de imagen en respuesta |
+
+### 2.2 Verificación
+
+**[HECHO VERIFICADO]** El escenario **FALLA POR DISEÑO**:
+
+```bash
+# Cualquiera puede descargar fotos de terceros
+curl http://localhost:8000/static/1722000123_victim.jpg
+# → HTTP 200
+# → [Binary image data]
+```
+
+**Evidencia del código:**
+```go
+// router.go:15 - Sin autenticación
+router.PathPrefix("/static/").Handler(
+  http.StripPrefix("/static/", 
+    http.FileServer(http.Dir("uploads/"))))
+```
+
+**Impacto:** S2 (persona registrada) está expuesta. Nombres + fotos de rostro accesibles a cualquiera. [HECHO VERIFICADO]
+
+---
+
+## 3. ESC-03: Mantenibilidad - Arranque en Máquina Limpia
+
+### 3.1 Especificación
+
+| Campo | Valor |
+|-------|-------|
+| **ID** | ESC-03 |
+| **Atributo** | AC-3 Facilidad de Arranque (Mantenibilidad, Prioridad 2) |
+| **Fuente** | Integrante nuevo clona repositorio |
+| **Estímulo** | Sigue README.md: `cd back && go run main.go` |
+| **Artefacto** | godotenv.Load() en server.go:70 |
+| **Ambiente** | Máquina limpia, sin .env (archivo no versionado) |
+| **Respuesta Esperada** | Backend arranca, corre con valores por defecto o lee config.json |
+| **Respuesta Actual** | **Fatal error en godotenv.Load(), EXIT 1** |
+| **Medida** | Exit code, presencia de "cannot open .env" en stderr |
+
+### 3.2 Verificación
+
+**[HECHO VERIFICADO]** El escenario **FALLA**:
+
+```bash
+cd back
+rm -f .env  # Simular máquina limpia
+go run main.go
+# → 2026/08/24 10:30:00 open .env: no such file or directory
+# → Fatal error
+# → Exit code: 1
+```
+
+**Evidencia del código:**
+```go
+// server.go:70-72
+err := godotenv.Load()
+if err != nil {
+  s.logger.Fatal(err)  // ← Fatal sin evaluar config.json
+}
+```
+
+**Impacto:** Nuevo desarrollador no puede arrancar sin .env, pero no entiende por qué porque no está documentado. [HECHO VERIFICADO]
+
+---
+
+## 4. ESC-04: Disponibilidad - Configuración Inválida
+
+### 4.1 Especificación
+
+| Campo | Valor |
+|-------|-------|
+| **ID** | ESC-04 |
+| **Atributo** | AC-6 Tolerancia a Config Inválida (Disponibilidad, Prioridad 4) |
+| **Fuente** | Sistema intenta iniciar con config.json corrupta |
+| **Estímulo** | config.json con `"database": "mongodb"` (motor no soportado) |
+| **Artefacto** | Switch en server.go:76 sin default case |
+| **Ambiente** | Backend con config.json modificado a valor inválido |
+| **Respuesta Esperada** | Error controlado con mensaje claro, exit code 1 |
+| **Respuesta Actual** | **Panic: runtime error en AutoMigrate (s.DB es nil)** |
+| **Medida** | Exit code, stack trace en logs |
+
+### 4.2 Verificación
+
+**[HECHO VERIFICADO]** El escenario **FALLA**:
+
+```bash
+# Modificar config.json
+echo '{"address": ":8000", "database": "mongodb"}' > config/config.json
+cd back && go run main.go
+# → Aplicando migraciones...
+# → panic: runtime error: invalid memory address or nil pointer dereference
+# → Exit code: 2 (panic)
+```
+
+**Evidencia del código:**
+```go
+// server.go:76-95 - Sin default case
+switch s.Config.Database {
+case "sqlite":
+  // ...
+case "postgres":
+  // ...
+  // ← Sin default, s.DB permanece nil
+}
+s.DB.AutoMigrate(&models.Kill{})  // ← Panic aquí
+```
+
+**Impacto:** Configuración inválida causa crash, no recuperable con mensaje claro. [HECHO VERIFICADO]
+
+---
+
+## 5. ESC-05: Integridad - POST sin Campo Requerido
+
+### 5.1 Especificación
+
+| Campo | Valor |
+|-------|-------|
+| **ID** | ESC-05 |
+| **Atributo** | Integridad (No mapeado a AC, meta transversal) |
+| **Fuente** | Usuario envía POST /death sin llenar campo "fullName" |
+| **Estímulo** | POST /death con fullName vacío |
+| **Artefacto** | Validación en kill_handlers.go:97 |
+| **Ambiente** | Backend corriendo, BD inicializada |
+| **Respuesta Esperada** | HTTP 400 Bad Request, rechaza registro |
+| **Respuesta Actual** | **HTTP 201 Created, persiste registro con fullName = ""** |
+| **Medida** | Status code, presencia de fullName en registro persistido |
+
+### 5.2 Verificación
+
+**[HECHO VERIFICADO]** El escenario **FALLA**:
+
+```bash
+# POST sin fullName
+curl -X POST http://localhost:8000/death \
+  -F "photo=@/path/to/image.jpg" \
+  -F "causeOfDeath=..." \
+  -F "details=..."
+  # Omitimos fullName
+
+# Respuesta: 201 Created (debería ser 400)
+# BD registro id=1: {"fullName": "", "faceImageUrl": "...", "details": "..."}
+```
+
+**Evidencia del código:**
+```go
+// kill_handlers.go:97-99
+fullName := r.FormValue("fullName")
+if fullName == "" {
+  s.HandleError(w, http.StatusBadRequest, ...)  // ← Valida
+  return
+}
+
+// Pero fullName no se persiste (gorm:"-" en modelo)
+kill := &models.Kill{
+  FullName: fullName,  // ← Se copia al struct
+  // ...
+}
+// Resultado: FullName en memoria, no en BD
+```
+
+**Impacto:** Registro incompleto, datos inconsistentes entre código y base. [HECHO VERIFICADO]
+
+---
+
+## 6. Método de Medición (ESC-01)
+
+### 6.1 Procedimiento
+
+**Escenario:** ESC-01 es el medido. Los pasos son:
+
+**Paso 1: Preparación**
+- [ ] Backend running en localhost:8000
+- [ ] BD SQLite (test.db) limpia o con datos iniciales
+- [ ] k6 instalado (`k6 --version`)
+- [ ] Script baseline.js en experimentos/medicion-escenario-01/scripts/
+
+**Paso 2: Ejecución de baseline (3 corridas)**
+
+```bash
+cd experimentos/medicion-escenario-01
+
+# Corrida 1 (descartada por calentamiento)
+k6 run scripts/baseline.js --out json=resultados/summary-warmup.json
+
+# Corrida 2 (primera válida)
+k6 run scripts/baseline.js --out json=resultados/summary-run1.json
+
+# Corrida 3 (segunda válida)
+k6 run scripts/baseline.js --out json=resultados/summary-run2.json
+```
+
+**Paso 3: Extracción de métrica**
+
+De cada archivo JSON, extraer: `metrics.http_req_duration.values.p(95)`
+
+Ejemplo:
+```json
+{
+  "metrics": {
+    "http_req_duration": {
+      "values": {
+        "p(95)": 245  // ← Esta métrica
+      }
+    }
+  }
+}
+```
+
+**Paso 4: Calcular mediana**
+
+```
+Run 1:  245 ms
+Run 2:  289 ms
+Mediana: (245 + 289) / 2 = 267 ms
+```
+
+**Paso 5: Comparar contra umbral**
+
+```
+Mediana = 267 ms
+Umbral = 500 ms
+Resultado: 267 < 500 ✓ CUMPLE
+```
+
+### 6.2 Configuración k6 (baseline.js)
+
+```javascript
+export const options = {
+  vus: 50,                      // 50 usuarios virtuales
+  duration: '60s',              // 60 segundos sostenidos
+  thresholds: {
+    'http_req_duration': ['p(95) < 500'],  // Umbral aquí
+    'checks': ['rate > 0.99']   // Error rate < 1%
+  }
+};
+```
+
+### 6.3 Declaraciones Obligatorias
+
+Las siguientes DEBEN estar en condiciones.md antes de ejecutar:
+
+- **Commit medido:** [PENDIENTE] (hash Git exacto)
+- **Semilla de datos:** [PENDIENTE] (número de registros en BD)
+- **Máquina:** [PENDIENTE] (hostname, CPU, RAM)
+- **Fecha de ejecución:** [PENDIENTE]
+- **Motor BD:** SQLite (declarado explícitamente)
+
+---
+
+## 7. Qué Invalida Esta Medición
+
+**Las siguientes condiciones INVALIDAN el resultado:**
+
+| Invalidador | Por qué | Detección |
+|------------|--------|-----------|
+| Ejecutar sobre PostgreSQL | R-03: Diferentes motores dan throughput radicalmente distinto | Revisar condiciones.md sección "Motor BD" |
+| Volumen de datos distinto entre corridas | Caché comporta diferente con 1 vs 100 registros | SELECT COUNT(*) FROM kills entre corridas |
+| k6 y backend en máquina diferente | Latencia de red entra en la medición | Verificar hostname en setup |
+| No declarar commit medido | Imposible reproducir exactamente | Revisar condiciones.md sección "Commit" |
+| Medir con BD en 1 registro | Resultado no extrapolable (caché perfecto) | Revisar "Semilla de datos" |
+| Máquina bajo carga de otros procesos | CPU compartida degrada p95 | Verificar `top` durante ejecución |
+| k6 versión distinta | Métrica de reporte puede variar | `k6 --version` debe ser registrado |
+
+---
+
+## 8. Advertencia Operativa: R-08 Afecta ESC-01
+
+**[HECHO VERIFICADO]** R-08 (http.Server sin ReadTimeout/WriteTimeout/IdleTimeout) afecta directamente este escenario.
+
+```go
+// server.go:58-67
+srv := &http.Server{
+  Addr:    s.Config.Address,
+  Handler: corsHandler,
+  // ← SIN ReadTimeout, WriteTimeout, IdleTimeout
+}
+```
+
+**Impacto:**
+- Conexiones lentas no se liberan
+- Slowloris attack es posible (cliente abre N conexiones lentamente)
+- Lo que medimos con k6 INCLUYE este comportamiento (conexiones sin timeout)
+
+**Implicación:** La medida de p95 en ESC-01 incluye el overhead de R-08. Si se corrige R-08, es probable que p95 **mejore** notoriamente.
+
+---
+
+## 9. Tabla de Resultados (Vacía)
+
+### 9.1 Corrida 1 (Descartada - Calentamiento)
+
+| Métrica | Valor | Unidad | Nota |
+|---------|-------|--------|------|
+| Requests completados | — | count | Descartada |
+| p50 latencia | — | ms | |
+| p95 latencia | — | ms | |
+| p99 latencia | — | ms | |
+| Error rate | — | % | |
+
+### 9.2 Corrida 2 (Válida)
+
+| Métrica | Valor | Unidad | Dentro Umbral |
+|---------|-------|--------|---|
+| Requests completados | [PENDIENTE] | count | — |
+| p50 latencia | [PENDIENTE] | ms | — |
+| p95 latencia | [PENDIENTE] | ms | [PENDIENTE] < 500 |
+| p99 latencia | [PENDIENTE] | ms | — |
+| Error rate | [PENDIENTE] | % | [PENDIENTE] < 1 |
+
+### 9.3 Corrida 3 (Válida)
+
+| Métrica | Valor | Unidad | Dentro Umbral |
+|---------|-------|--------|---|
+| Requests completados | [PENDIENTE] | count | — |
+| p50 latencia | [PENDIENTE] | ms | — |
+| p95 latencia | [PENDIENTE] | ms | [PENDIENTE] < 500 |
+| p99 latencia | [PENDIENTE] | ms | — |
+| Error rate | [PENDIENTE] | % | [PENDIENTE] < 1 |
+
+### 9.4 Mediana (Resultado Final)
+
+| Métrica | Corrida 2 | Corrida 3 | Mediana | Resultado |
+|---------|----------|----------|---------|-----------|
+| p95 latencia (ms) | [PENDIENTE] | [PENDIENTE] | **[PENDIENTE]** | ✓ / ✗ |
+| Error rate (%) | [PENDIENTE] | [PENDIENTE] | **[PENDIENTE]** | ✓ / ✗ |
+
+---
+
+## 10. Contraste contra Umbral
+
+### 10.1 Verificación (PENDIENTE)
+
+[PENDIENTE — No se ejecuta hasta que baseline.js esté listo]
+
+**Cuando se haya ejecutado:**
+
+```
+Mediana p95 latencia = [RESULTADO]
+Umbral = 500 ms
+
+☐ [RESULTADO] < 500 → CUMPLE
+☐ [RESULTADO] >= 500 → FALLA
+```
+
+### 10.2 Declaración Importante
+
+**[HECHO VERIFICADO]** El umbral (500 ms) fue fijado **ANTES** de ejecutar la medición.
+
+El umbral **NO será ajustado** después de conocer el resultado. Si falla:
+- No diremos "el umbral era demasiado estricto"
+- Diremos "hay un problema estructural en la respuesta"
+
+Esto preserva la integridad del experimento.
+
+---
+
+## 11. Reproducibilidad
+
+### 11.1 Pasos Exactos para Reproducir
+
+Para que otro desarrollador ejecute ESC-01 idénticamente:
+
+**Requisitos previos:**
+```bash
+# Verificar versión exacta
+go version              # Go 1.24.3
+k6 --version            # [PENDIENTE — registrar en condiciones.md]
+node --version          # Node 24.18.0
+npm --version           # npm 11.x
+```
+
+**Clonar y preparar:**
+```bash
+git clone [repo URL]
+cd back
+# Usar commit específico (ver condiciones.md)
+git checkout [COMMIT HASH]
+```
+
+**Generar .env (reproducible):**
+```bash
+cat > .env << 'EOF'
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=root
+DB_NAME=test.db
+DB_PORT=5432
+EOF
+```
+
+**Limpiar BD:**
+```bash
+rm -f test.db  # SQLite se recrea en primer uso
+```
+
+**Ejecutar:**
+```bash
+cd back
+go mod download
+go build ./...
+go run main.go &  # background
+
+cd ../experimentos/medicion-escenario-01
+
+# Warmup (descartada)
+k6 run scripts/baseline.js
+
+# Corrida 1
+k6 run scripts/baseline.js --out json=resultados/summary-run1.json
+
+# Corrida 2
+k6 run scripts/baseline.js --out json=resultados/summary-run2.json
+```
+
+**Extraer resultado:**
+```bash
+# Script para parsear
+cat resultados/summary-run1.json | jq '.metrics.http_req_duration.values."p(95)"'
+cat resultados/summary-run2.json | jq '.metrics.http_req_duration.values."p(95)"'
+```
+
+### 11.2 Configuración Reproducible (Exacta)
+
+**config.json:**
+```json
+{
+  "address": ":8000",
+  "database": "sqlite"
+}
+```
+
+**Versiones clave:**
+```
+Go:             1.24.3 (exacta)
+k6:             [PENDIENTE — registrar en condiciones.md]
+Node:           24.18.0
+SQLite:         (incluido en Go)
+Commit backend: [PENDIENTE — registrar en condiciones.md]
+```
+
+**Datos iniciales:**
+```
+BD vacía (test.db se crea automáticamente)
+Primera corrida: 1 registro (calentamiento)
+Segunda corrida: [PENDIENTE — especificar semilla]
+```
+
+---
+
+## 12. Resumen: ESC-01 a ESC-05
+
+| ESC | Atributo | Fuente | Estímulo | Resultado Esperado | Resultado Real | Status |
+|-----|----------|--------|----------|------------------|---|---|
+| **ESC-01** | AC-5 Rendimiento | 50 VUs | GET /death 60s | p95 < 500 ms | [PENDIENTE] | **LÍNEA BASE** |
+| **ESC-02** | AC-1 Seguridad | Anónimo | GET /static/ | 401 Unauthorized | 200 OK [FALLA] | Binario |
+| **ESC-03** | AC-3 Mantenibilidad | Nuevo dev | cd back && go run | Arranca | Fatal [FALLA] | Binario |
+| **ESC-04** | AC-6 Disponibilidad | Sistema | Config inválida | Error controlado | Panic [FALLA] | Binario |
+| **ESC-05** | Integridad | Usuario | POST sin fullName | 400 Bad Request | 201 Created [FALLA] | Binario |
+
+---
+
+## 13. Dependencias
+
+- **← 03-atributos-calidad.md:** AC-1 a AC-6 que validan estos escenarios
+- **← 02-stakeholders-drivers.md:** Drivers que motivan cada escenario
+- **→ experimentos/medicion-escenario-01/:** ESC-01 implementado con k6
+
+---
+
+**Documento finalizado:** 2026-08-24  
+**Estado:** COMPLETADO - 5 escenarios definidos, ESC-01 listo para medir  
+**Próximo paso:** Completar condiciones.md y ejecutar baseline.js
