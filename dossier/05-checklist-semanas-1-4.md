@@ -64,12 +64,12 @@
 
 | Tarea | Descripción | Completado | Evidencia |
 |-------|---|---|---|
-| **S4.1** | Instalar k6 (load testing instrument) | ✅ HECHO | k6 v0.49.0 verificado |
+| **S4.1** | Instalar k6 (load testing instrument) | ✅ HECHO | k6 v2.2.0 verificado |
 | **S4.2** | Preparar script baseline.js con parámetros prerregistrados | ✅ HECHO | experimentos/medicion-escenario-01/scripts/baseline.js |
-| **S4.3** | Completar condiciones.md con contexto de medición | ✅ HECHO | Commit d3e06e6, 3302 registros, Intel i7-10700K, Windows 11 |
+| **S4.3** | Completar condiciones.md con contexto de medición | ✅ HECHO | Commit d3e06e6, 3302 registros, Intel i7-1255U, HP ProBook 440 G9, Windows 11 |
 | **S4.4** | Ejecutar 3 corridas (1 warmup, 2 válidas) | ✅ HECHO | Run-warmup, run-2, run-3 completadas exitosamente |
 | **S4.5** | Documentar resultados en dossier/04-escenarios-calidad.md (sección 9) | ✅ HECHO | Tabla 9.1-9.4 con datos reales de las 3 corridas |
-| **S4.6** | Calcular mediana y contrastar contra umbral | ✅ HECHO | Mediana = 1111.83 ms; Veredicto: NO CUMPLE (2.2× umbral) |
+| **S4.6** | Calcular mediana y contrastar contra umbral | ✅ HECHO | Mediana = 1114.69 ms; Veredicto: NO CUMPLE (2.23× umbral) |
 | **S4.7** | Documentar análisis del incumplimiento (raíz del problema) | ✅ HECHO | Sección 10: handleGetAllKills sin paginación, 557 KB respuesta |
 | **S4.8** | Identificar invalidadores que se evitaron | ✅ HECHO | Motor BD (SQLite), volumen datos (3302), máquina (k6+backend juntos) |
 
@@ -146,7 +146,7 @@
 - ✅ 5 escenarios de calidad diseñados y documentados
 - ✅ Línea base medida con 3 corridas (ESC-01 Rendimiento)
 - ✅ Umbral fijado ANTES de medir (integridad del experimento)
-- ✅ Resultado: NO CUMPLE (p95 = 1111.83 ms vs 500 ms umbral)
+- ✅ Resultado: NO CUMPLE (p95 = 1114.69 ms vs 500 ms umbral)
 - ✅ Raíz identificada: handleGetAllKills sin paginación
 
 **Documentación:**

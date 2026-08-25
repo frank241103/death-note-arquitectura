@@ -112,7 +112,7 @@ Las siguientes condiciones **invalidan completamente** el resultado:
 - [x] Backend arranca: `go run main.go` sin errores (verificado 2026-08-24)
 - [x] BD existe: `back/test.db` presente con 3302 registros (verificado)
 - [x] Número de registros confirmado: 3302 (SELECT COUNT(*) FROM kills)
-- [x] k6 instalado: v0.49.0 (k6 --version ejecutado)
+- [x] k6 instalado: v2.2.0 (k6 version ejecutado)
 - [x] Script presente: `scripts/baseline.js` (verificado)
 - [x] Máquina con CPU disponible (contención registrada pero aceptable)
 
