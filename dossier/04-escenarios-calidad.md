@@ -408,6 +408,8 @@ srv := &http.Server{
 
 ---
 
+| run-4 | Máquina 2 (John Andersson Galeano Mora) | 3000 | 640.71 ms | NO CUMPLE |
+
 ## 10. Contraste contra Umbral
 
 ### 10.1 Verificación (EJECUTADO 2026-08-24)
@@ -574,3 +576,4 @@ Segunda corrida: [PENDIENTE — especificar semilla]
 **Documento finalizado:** 2026-08-24  
 **Estado:** COMPLETADO - 5 escenarios definidos, ESC-01 listo para medir  
 **Próximo paso:** Completar condiciones.md y ejecutar baseline.js
+
