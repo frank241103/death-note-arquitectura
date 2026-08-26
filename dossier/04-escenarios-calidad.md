@@ -102,7 +102,16 @@ router.PathPrefix("/static/").Handler(
 **Impacto:** S2 (persona registrada) está expuesta. Nombres + fotos de rostro accesibles a cualquiera. [HECHO VERIFICADO]
 
 ---
+---
+**Verificación ejecutada (jhoan sebastian reyes pachon)**
+- Fecha: 2026-08-26
+- Ejecutado por: jhoan sebastian reyes pachon
+- Comando o acción: curl http://localhost:8000/static/ (con servidor corriendo en back)
+- Resultado observado: 404 page not found. El servidor no tiene habilitada la ruta /static/ o no existe la carpeta estática.
+- Conclusión: el escenario NO FALLA (no se puede verificar porque el endpoint no existe)
+- Estado: HECHO VERIFICADO (con hallazgo)
 
+---
 ## 3. ESC-03: Mantenibilidad - Arranque en Máquina Limpia
 
 ### 3.1 Especificación
@@ -141,7 +150,17 @@ if err != nil {
 }
 ```
 
+**Impacto:** Nuevo desarrollador no puede arrancar sin .env, pero no entiende por qué porque no está documentado. [HECHO VERIFICADO
+
 **Impacto:** Nuevo desarrollador no puede arrancar sin .env, pero no entiende por qué porque no está documentado. [HECHO VERIFICADO]
+
+**Verificación ejecutada (jhoan sebastian reyes pachon)**
+- Fecha: 2026-08-26
+- Ejecutado por: jhoan sebastian reyes pachon
+- Comando o acción: go run main.go (en carpeta back, sin archivo .env)
+- Resultado observado: FATAL | ERROR: open .env: El sistema no puede encontrar el archivo especificado. exit status 1
+- Conclusión: el escenario FALLA
+- Estado: HECHO VERIFICADO
 
 ---
 
@@ -189,6 +208,35 @@ s.DB.AutoMigrate(&models.Kill{})  // ← Panic aquí
 
 **Impacto:** Configuración inválida causa crash, no recuperable con mensaje claro. [HECHO VERIFICADO]
 
+**Verificación ejecutada (jhoan sebastian reyes pachon)**
+- Fecha: 2026-08-26
+- Ejecutado por: jhoan sebastian reyes pachon
+- Comando o acción: Cambiar "database" a "mongodb" en config.json y ejecutar go run main.go
+- Resultado observado: 
+PS C:\Users\reyes\death-note-arquitectura\back> go run main.go
+Inicializando base de datos...
+HOST: host=%!s(MISSING) user=%!s(MISSING) password=%!s(MISSING) dbname=%!s(MISSING) sslmode=disable
+Aplicando migraciones...
+panic: runtime error: invalid memory address or nil pointer dereference
+[signal 0xc0000005 code=0x0 addr=0x28 pc=0x7ff644d62452]
+
+goroutine 1 [running]:
+gorm.io/gorm.(*DB).getInstance(0xce2b0269af8?)
+        C:/Users/reyes/go/pkg/mod/gorm.io/gorm@v1.26.0/gorm.go:418 +0x12
+gorm.io/gorm.(*DB).Migrator(0x1b7ca6f4c60?)
+        C:/Users/reyes/go/pkg/mod/gorm.io/gorm@v1.26.0/migrator.go:12 +0x13
+gorm.io/gorm.(*DB).AutoMigrate(0x10?, {0xce2b02c1790, 0x1, 0x1})
+        C:/Users/reyes/go/pkg/mod/gorm.io/gorm@v1.26.0/migrator.go:24 +0x25
+backend-avanzada/server.(*Server).initDB(0xce2b02eeb80)
+        C:/Users/reyes/death-note-arquitectura/back/server/server.go:97 +0x645
+backend-avanzada/server.(*Server).StartServer(0xce2b02eeb80)
+        C:/Users/reyes/death-note-arquitectura/back/server/server.go:47 +0x72
+main.main()
+        C:/Users/reyes/death-note-arquitectura/back/main.go:9 +0x18
+exit status 2
+PS C:\Users\reyes\death-note-arquitectura\back> 
+- Conclusión: el escenario FALLA (el sistema crashea sin manejar el error correctamente)
+- Estado: HECHO VERIFICADO
 ---
 
 ## 5. ESC-05: Integridad - POST sin Campo Requerido
@@ -242,6 +290,13 @@ kill := &models.Kill{
 
 **Impacto:** Registro incompleto, datos inconsistentes entre código y base. [HECHO VERIFICADO]
 
+**Verificación ejecutada (jhoan sebastian reyes pachon)**
+- Fecha: 2026-08-26
+- Ejecutado por: jhoan sebastian reyes pachon
+- Comando o acción: curl.exe -X POST http://localhost:8000/death -F "fullName=" -F "causeOfDeath=prueba" -F "details=prueba sin nombre" -F "photo=seed.png"
+- Resultado observado: {"status":400,"description":"Bad Request","message":"firstName y lastName son requeridos"}
+- Conclusión: el escenario NO FALLA. El sistema rechaza correctamente los registros incompletos. El documento original estaba equivocado al afirmar que aceptaba registros sin nombre, y esta verificación lo corrige.
+- Estado: HECHO VERIFICADO (CORREGIDO)
 ---
 
 ## 6. Método de Medición (ESC-01)
