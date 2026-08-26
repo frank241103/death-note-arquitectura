@@ -9,8 +9,13 @@ Repositorio de trabajo del equipo para la asignatura. Contiene el sistema base a
 | Integrante | Usuario GitHub | Responsabilidad |
 |---|---|---|
 | David Rodríguez | frank241103 | Adopción del sistema base y medición de línea base |
-| [PENDIENTE] | [PENDIENTE] | [PENDIENTE] |
-| [PENDIENTE] | [PENDIENTE] | [PENDIENTE] |
+| Dylam Jaime | Dylam0 | Preregistro, protocolo reproducible y matriz de evidencia (docs/experiment/) - PR # 1 |
+| Sebastian Reyes | sebasrrrp | Verificacion empirica de escenarios ESC-02 a ESC - 05 con capturas - PR # 2  |
+
+### 📚 Información Académica
+- **Materia:** Arquitectura de Software
+- **Universidad / Institución:** Universidad Jorge Tadeo Lozano
+- **Semestre / Período:** 2026-II
 
 ---
 
