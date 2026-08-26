@@ -1,0 +1,15 @@
+{
+  "captured_at": "2026-08-26",
+  "ejecutado_por": "John Andersson Galeano Mora",
+  "git_revision": "7f6b71f",
+  "machine": {
+    "manufacturer_model": "System manufacturer System Product Name",
+    "processor": "AMD Ryzen 5 3400G with Radeon Vega Graphics",
+    "logical_cpus": 8,
+    "physical_memory_gb": 13.9,
+    "operating_system": "Windows 11 Pro"
+  },
+  "semilla_registros": 3000,
+  "k6_version": "v2.2.0",
+  "shared_physical_machine": true
+}
