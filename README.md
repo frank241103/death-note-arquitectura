@@ -11,6 +11,7 @@ Repositorio de trabajo del equipo para la asignatura. Contiene el sistema base a
 | David Rodríguez | frank241103 | Adopción del sistema base y medición de línea base |
 | Dylam Jaime | Dylam0 | Preregistro, protocolo reproducible y matriz de evidencia (docs/experiment/) - PR # 1 |
 | Sebastian Reyes | sebasrrrp | Verificacion empirica de escenarios ESC-02 a ESC - 05 con capturas - PR # 2  |
+| John Anderson Galeano |  | Cuarta corrida de medicion en maquina independiente (AMD Ryzen 5), verificacion de integridad con SHA256 y contexto de la segunda maquina |
 
 ### 📚 Información Académica
 - **Materia:** Arquitectura de Software
