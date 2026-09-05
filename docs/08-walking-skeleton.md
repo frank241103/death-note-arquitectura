@@ -200,5 +200,5 @@ asume recibir la colección completa.
 
 - **Repositorio:** https://github.com/frank241103/death-note-arquitectura
 - **Rama:** `main`
-- **Commit:** *(completar tras el merge)*
-- **Pull Request:** *(completar tras el merge)*
+- **Commit:** *f69d9c5*
+- **Pull Request:** *#6*
