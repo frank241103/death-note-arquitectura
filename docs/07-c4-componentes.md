@@ -166,5 +166,5 @@ representa como hecho verificado.
 
 - **Repositorio:** https://github.com/frank241103/death-note-arquitectura
 - **Rama:** `main`
-- **Commit:** *(completar con el hash resultante del PR de este módulo)*
-- **Pull Request:** *(completar con el número del PR)*
+- **Commit:** *06b8d27*
+- **Pull Request:** *#4*
