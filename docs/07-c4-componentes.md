@@ -121,8 +121,8 @@ requeridos"* — campos que no existen en `KillRequestDto` ni en el modelo.
 | T-09 | C3 | Router | Registro y despacho de rutas | `back/server/router.go` | `mux.NewRouter()`, 4 `HandleFunc` | Router → Handlers | Verificado | — |
 | T-10 | C3 | Kill Handlers | Procesa las peticiones sobre registros | `back/server/kill_handlers.go` | `HandleKills`, `handleGetAllKills`, `handleCreateKill`, `HandleUpdateKillById` | Handlers → Repository | Verificado | Sin paginación en `handleGetAllKills` |
 | T-11 | C3 | Kill DTO | Contratos de entrada y salida | `back/api/kill.go` | `KillRequestDto`, `KillResponseDto` | Handlers → DTO | Verificado | Declara `json:` pero la creación usa `multipart/form-data` |
-| T-12 | C3 | Kill Model | Entidad persistida | `back/models/` | `models.Kill`, `ToKillResponseDto()` | Repository → Model | Verificado | — |
-| T-13 | C3 | Kill Repository | Acceso a datos | `back/repository/` | `repository.NewKillRepository(db)`, `FindAll`, `FindById`, `Save`, `Update` | Repository → GORM → SQLite | Verificado | — |
+| T-12 | C3 | Kill Model | Entidad persistida | `back/models/kill.go` | `models.Kill`, `ToKillResponseDto()` | Repository → Model | Verificado | — |
+| T-13 | C3 | Kill Repository | Acceso a datos | `back/repository/kill_repository.go` | `repository.NewKillRepository(db)`, `FindAll`, `FindById`, `Save`, `Update` | Repository → GORM → SQLite | Verificado | — |
 | T-14 | C3 | Configuration | Configuración de arranque | `back/config/config.json`, `back/server/server.go` | `json.Unmarshal(configFile, &config)`, `godotenv.Load()` | Configuration → selección de motor | Verificado | Aborta si falta `.env`, aun usando SQLite |
 | T-15 | C3 | Logger | Registro de peticiones y errores | `back/logger/` | `logger.NewLogger()`, `s.logger.RequestLogger` | Router → Logger (middleware) | Verificado | — |
 | T-16 | C3 | File Server | Entrega de archivos estáticos | `back/server/router.go` | `http.StripPrefix("/static/", http.FileServer(http.Dir("uploads/")))` | Router → File Server | Verificado | Sin control de acceso |
