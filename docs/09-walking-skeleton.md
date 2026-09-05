@@ -1,4 +1,4 @@
-# 08 — Walking Skeleton del sistema Death Note
+# 09 — Walking Skeleton del sistema Death Note
 
 **Sistema:** Death Note
 **Repositorio:** https://github.com/frank241103/death-note-arquitectura
