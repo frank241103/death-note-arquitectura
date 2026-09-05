@@ -59,7 +59,7 @@ godotenv, rs/cors, drivers de base de datos), no clientes de servicios remotos.
 
 ---
 
-## 5. Correcciones realizadas tras validar contra el código
+## 5. Correcciones realizadas tras validar contra el código.
 
 La versión inicial de esta vista, elaborada antes de auditar el código, incluía
 dos elementos que **no existen en el sistema**. Ambos fueron eliminados.
