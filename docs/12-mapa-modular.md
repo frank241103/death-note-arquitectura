@@ -22,6 +22,13 @@ hace explícito qué responsabilidad pertenece a cada frontera.
 La propuesta separa **qué hace el sistema** (`kill`), **cómo conserva y expone
 archivos** (`media`) y **cómo se inicia y conecta el conjunto** (`platform`).
 
+### Alcance del análisis
+
+El mapa corresponde al backend implementado en Go. Se revisaron los paquetes
+internos, sus importaciones y los puntos donde se mezclan responsabilidades. No
+se propone dividir el sistema en microservicios: los límites se aplicarán dentro
+del mismo despliegue como un monolito modular.
+
 ## 2. Matriz de dependencias permitidas
 
 La fila representa el módulo que importa o usa; la columna representa el
