@@ -166,3 +166,10 @@ arranque, la infraestructura de base de datos, CORS y el registro de rutas.
 > usar `media`, debería hacerlo mediante la interfaz pública del módulo y no
 > conocer su implementación local. La ausencia de esa frontera dispersa el
 > cambio entre el router y el handler.
+
+### Prioridad de tratamiento
+
+| Violación | Prioridad | Acción inicial | Evidencia de cierre |
+|---|---|---|---|
+| V-01 | Alta | Extraer un puerto de almacenamiento y retirar `os.Create` del handler | Prueba del caso de uso con almacenamiento simulado |
+| V-02 | Media | Encapsular el servicio de archivos detrás del módulo `media` | El router registra una interfaz pública sin conocer `uploads/` |
