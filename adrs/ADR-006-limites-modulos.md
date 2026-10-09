@@ -96,4 +96,11 @@ obtenerse primero dentro del monolito modular.
 4. Mover la publicación de archivos fuera del router general.
 5. Agregar pruebas que impidan dependencias inversas entre módulos.
 
+## Criterios de verificación
+
+La decisión se considerará aplicada cuando `kill` pueda probarse con dobles de
+repositorio y almacenamiento, `media` no importe modelos de `kill`, y solo
+`platform` conozca las implementaciones concretas utilizadas durante el
+arranque.
+
 ## Veredicto del mini-comité 1
