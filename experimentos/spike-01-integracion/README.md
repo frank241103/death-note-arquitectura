@@ -89,7 +89,7 @@ configuración de carga de `seed-load.js` — 10 VUs, 300 iteraciones, `sleep(1)
 
 | Métrica | `POST /death` | `PATCH /deathUpdate` | Diferencia | Proporción |
 |---|---:|---:|---:|---:|
-| **p95 (ms)** | **1732,03** | **505,87** | **1226,16** | **70,8 %** |
+| **p95 (ms)** | **1730,45** | **505,87** | **1224,57** | **70,8 %** |
 | Mediana (ms) | 45,95 | 21,57 | 24,38 | 53,1 % |
 | Promedio (ms) | 299,25 | 69,59 | 229,66 | 76,7 % |
 | Máximo (ms) | 4498,83 | 813,28 | 3685,55 | 81,9 % |
@@ -113,11 +113,20 @@ configuración de carga de `seed-load.js` — 10 VUs, 300 iteraciones, `sleep(1)
 > concurrentes. k6 terminó con código de error:
 > `thresholds on metrics 'http_req_duration' have been crossed`.
 
+> **Nota sobre la métrica usada.** El script `seed-load.js` define además una
+> métrica personalizada `latencia_escritura_ms`, cuyo p95 es 1732,03 ms. Las
+> tablas de este documento usan `http_req_duration` (1730,45 ms), que es la
+> métrica estándar de k6 y la que aparece en `resultados/post-baseline.json`.
+> La diferencia de 1,6 ms se debe a que la métrica personalizada se registra
+> dentro del cuerpo de la iteración y abarca un instante más que la petición
+> HTTP. Se declara para que el JSON crudo y este documento sean verificables
+> uno contra otro.
+
 ### Hallazgo secundario — cola larga
 
 | Operación | Mediana | p95 | Razón p95/mediana |
 |---|---:|---:|---:|
-| `POST /death` | 45,95 ms | 1732,03 ms | **37,7×** |
+| `POST /death` | 45,95 ms | 1730,45 ms | **37,7×** |
 | `PATCH /deathUpdate` | 21,57 ms | 505,87 ms | 23,5× |
 
 La mediana de `POST` (46 ms) es perfectamente aceptable. El problema está en la
