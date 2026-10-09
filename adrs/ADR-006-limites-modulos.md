@@ -88,4 +88,12 @@ frontera mediante una red, pero introduce despliegues, fallos distribuidos y
 latencia adicionales para un sistema pequeño. Los límites requeridos pueden
 obtenerse primero dentro del monolito modular.
 
+## Plan de adopción
+
+1. Definir en `kill` el puerto requerido para guardar imágenes.
+2. Crear `media` con una implementación basada en el directorio local actual.
+3. Inyectar esa implementación desde `platform`.
+4. Mover la publicación de archivos fuera del router general.
+5. Agregar pruebas que impidan dependencias inversas entre módulos.
+
 ## Veredicto del mini-comité 1
