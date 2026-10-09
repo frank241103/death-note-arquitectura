@@ -24,6 +24,13 @@ El comando `go list -deps ./...` confirma que no existe un paquete `media`; la
 responsabilidad está incrustada en `server` y por eso su acoplamiento no aparece
 como una importación independiente.
 
+## Fuerzas de decisión
+
+- Mantener un único despliegue adecuado al tamaño actual del sistema.
+- Poder probar las reglas de `kill` sin servidor HTTP, base de datos ni disco.
+- Evitar que la ubicación física de las imágenes se propague a los handlers.
+- Hacer visibles y revisables las dependencias entre responsabilidades.
+
 ## Decisión
 
 Definir tres módulos: `kill`, `media` y `platform`, con las siguientes
