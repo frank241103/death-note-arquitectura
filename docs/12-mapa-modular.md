@@ -80,6 +80,12 @@ Se ejecutó en la carpeta `back/` el comando solicitado:
 go list -deps ./... | findstr backend-avanzada
 ```
 
+En Linux o macOS se puede reproducir la misma comprobación con:
+
+```text
+go list -deps ./... | grep backend-avanzada
+```
+
 La salida de paquetes internos fue:
 
 ```text
