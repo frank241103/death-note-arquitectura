@@ -60,6 +60,18 @@ módulo usado.
 crea las implementaciones, las conecta y expone los endpoints. Esta dependencia
 debe ir desde el exterior hacia los módulos, nunca en sentido contrario.
 
+### Dirección esperada
+
+```mermaid
+flowchart TD
+    P[platform] --> K[kill]
+    P --> M[media]
+    K -. puerto de almacenamiento .-> P
+```
+
+La línea punteada representa un contrato definido por `kill` e implementado
+desde el exterior. No significa que `kill` importe directamente a `platform`.
+
 ## 3. Acoplamiento actual medido
 
 Se ejecutó en la carpeta `back/` el comando solicitado:
