@@ -27,7 +27,7 @@
     "deathTime": "2026-10-09T19:00:40Z"
   }
 }
-
+```
 ## 3. Filtrado de Eventos Propuestos por IA
 
 | # | Evento Propuesto por IA | Veredicto | Justificación Técnica |
