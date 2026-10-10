@@ -143,10 +143,13 @@ en el Módulo 3, **cinco son accidentales**.
 ---
 
 ## 7. Implicaciones de seguridad del estilo elegido
+La adopción de una arquitectura Hexagonal (Puertos y Adaptadores) aborda directamente las vulnerabilidades identificadas en el sistema:
 
-> **PENDIENTE — redacta Sebastián.** Conectar con R-05 y R-06, y responder:
-> ¿qué habilita el puerto `MediaStore` que hoy no es posible? ¿Qué riesgo nuevo
-> introduce la indirección, si alguno?
+* **Mitigación frente al Riesgo R-05 (Credenciales y configuración dispersas):** La separación en puertos e infraestructura permite centralizar la lectura de variables de entorno en un único adaptador de configuración. Esto evita la dispersión de credenciales en múltiples componentes y garantiza un único punto de control.
+* **Evaluación frente al Riesgo R-06 (Servidor de archivos sin control de acceso):**
+  * **¿Qué habilita el puerto `MediaStore` que hoy no es posible?** Actualmente, el sistema sirve archivos estáticos leyendo directo del disco sin pasar por lógica de aplicación. El puerto `MediaStore` abstrae el almacenamiento de archivos, permitiendo interponer un adaptador con middleware de autenticación y autorización (o cambiar el backend de almacenamiento a S3/GCS) antes de entregar el recurso.
+  * **¿Qué riesgo nuevo introduce la indirección, si alguno?** Introduce una ligera complejidad operativa y un potencial cuello de botella en latencia si el adaptador de almacenamiento implementa validaciones síncronas complejas o consultas adicionales a la base de datos por cada solicitud de archivo.
+
 
 ---
 
