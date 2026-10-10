@@ -421,3 +421,14 @@ Las siguientes secciones serán documentadas en próximas iteraciones:
 **Documento generado:** 2026-08-24  
 **Verificación hecha por:** Claude AI (Anthropic) + lectura manual de código  
 **Estado:** Listo para revisión del equipo
+
+---
+
+## Mapa de Bounded Contexts y Límites de Dominio
+
+El dominio del sistema se ha delimitado formalmente en 4 Bounded Contexts para reducir acoplamiento:
+
+1. **KillManagement (Core):** Maneja el ciclo de vida de la escritura de muertes en el cuaderno.
+2. **RulesEngine (Core):** Valida las reglas lógicas del cuaderno previo al registro.
+3. **AuditLog (Soporte):** Recibe eventos de forma asíncrona para trazabilidad sin bloquear la respuesta HTTP.
+4. **MediaStore (Genérico):** Sirve archivos adjuntos mediante aislamiento de infraestructura.
