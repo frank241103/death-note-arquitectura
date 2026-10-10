@@ -42,3 +42,11 @@
 * **Hipótesis:** Introducir un despacho asíncrono de eventos para operaciones de escritura reduce la latencia p95 del endpoint `POST /kill` en al menos un 15% bajo carga sintética.
 * **Alcance:** Implementar un canal en memoria (`Go channels`) para procesar auditoría sin bloquear la respuesta HTTP principal.
 * **Criterio de Éxito:** Mantener la latencia mediana por debajo de 50 ms en pruebas k6 sin pérdida de eventos de auditoría.
+### Responsabilidades y Dueños por Bounded Context
+
+| Bounded Context | Responsabilidades Principales | Dueño (Rol) | Modelo de Datos Propio |
+|---|---|---|---|
+| **KillManagement** | Registro de ejecuciones, validación de reglas temporales y persistencia principal. | Product Owner Core | Tabla `kills` en SQLite / PostgreSQL |
+| **RulesEngine** | Verificación estricta de condiciones de muerte (causa, detalles, 40 segundos). | Arq. de Dominio | Reglas inmutables en memoria / Config |
+| **AuditLog** | Registro histórico de eventos, emisión de alertas y log de auditoría no modificable. | Oficial de Seguridad | Canal de eventos asíncrono (`Go channels`) |
+| **MediaStore** | Servidor de imágenes y documentos estáticos. | Dev Infrastructure | File System / Object Storage |
