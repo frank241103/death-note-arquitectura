@@ -215,3 +215,7 @@ derivarse automáticamente de este resultado.
   precisamente la costura por donde este cambio sería posible sin tocar el
   dominio.
 
+## Veredicto y Conclusiones del Spike 1
+
+* **Observado:** Tras analizar `patch-probe.json` y `post-baseline.json`, el desacoplamiento mediante Go channels estabilizó los tiempos de respuesta.
+* **Veredicto:** **Aprobado**. La integración asíncrona es viable y mejora el rendimiento sin comprometer la consistencia en el dominio principal.
