@@ -37,3 +37,8 @@
 | 3 | `KillRuleEvaluated` | **Redundante** | La validación de reglas ocurre de forma sincrónica previa al registro. |
 | 4 | `MediaUploaded` | **Real** | Relevante para desacoplar la carga de imágenes en `MediaStore`. |
 
+## 4. Definición, Alcance e Hipótesis del Spike 1
+
+* **Hipótesis:** Introducir un despacho asíncrono de eventos para operaciones de escritura reduce la latencia p95 del endpoint `POST /kill` en al menos un 15% bajo carga sintética.
+* **Alcance:** Implementar un canal en memoria (`Go channels`) para procesar auditoría sin bloquear la respuesta HTTP principal.
+* **Criterio de Éxito:** Mantener la latencia mediana por debajo de 50 ms en pruebas k6 sin pérdida de eventos de auditoría.
