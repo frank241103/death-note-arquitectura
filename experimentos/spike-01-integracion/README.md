@@ -219,3 +219,15 @@ derivarse automáticamente de este resultado.
 
 * **Observado:** Tras analizar `patch-probe.json` y `post-baseline.json`, el desacoplamiento mediante Go channels estabilizó los tiempos de respuesta.
 * **Veredicto:** **Aprobado**. La integración asíncrona es viable y mejora el rendimiento sin comprometer la consistencia en el dominio principal.
+
+---
+
+### Tabla Comparativa de Integración (Síncrona vs. Asíncrona)
+
+| Criterio / Métrica | Síncrona (API REST Directa) | Asíncrona (Eventos / Go Channels) | Observaciones de la Prueba |
+|---|---|---|---|
+| **Latencia p95 (ms)** | ~2,410.50 ms | **~1,730.00 ms** | Disminución del 28% en la cola de latencia. |
+| **Throughput (req/s)** | ~45 req/s | **~112 req/s** | Incremento sustancial en capacidad de procesamiento. |
+| **Tasa de Error (%)** | 0.00% | 0.00% | Ambas opciones mantuvieron estabilidad bajo carga. |
+| **Acoplamiento (# dependencias)** | Alto (bloqueante) | **Bajo (desacoplado)** | El canal aísla la escritura de la respuesta HTTP. |
+| **Esfuerzo percibido (1-5)** | 1 (Muy simple) | 2 (Complejidad moderada) | Los canales nativos de Go reducen la sobrecarga de setup. |
