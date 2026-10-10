@@ -28,11 +28,3 @@
   }
 }
 
-## 3. Filtrado de Eventos Propuestos por IA
-
-| # | Evento Propuesto por IA | Veredicto | Justificación Técnica |
-|---|---|---|---|
-| 1 | `DeathRecorded` | **Real** | Corresponde directamente a la persistencia en `kill_handlers.go`. |
-| 2 | `UserAuthenticated` | **Inventado** | La base de código no posee capa de autenticación ni usuarios. |
-| 3 | `KillRuleEvaluated` | **Redundante** | La validación de reglas ocurre de forma sincrónica previa al registro. |
-| 4 | `MediaUploaded` | **Real** | Relevante para desacoplar la carga de imágenes en `MediaStore`. |
