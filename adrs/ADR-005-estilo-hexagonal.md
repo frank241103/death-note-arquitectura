@@ -1,6 +1,6 @@
 # ADR-005 — Adopción de arquitectura hexagonal (puertos y adaptadores)
 
-**Estado:** Aceptada — pendiente de veredicto del mini-comité 1
+**Estado:** Aceptada — confirmada por el mini-comité 1 (2026-10-09)
 **Fecha:** 2026-10-08
 **Módulo:** 4
 **Decide:** equipo de arquitectura (4 integrantes)
@@ -83,7 +83,20 @@ Análisis completo en `docs/10-decision-estilo-arquitectonico.md`.
 
 ## Veredicto del mini-comité 1
 
-> **PENDIENTE.** Confirmada / Ajustada / Reconsiderada.
+**Veredicto recibido: CONFIRMADA.**
+
+El mini-comité celebrado el 2026-10-09 confirmó la propuesta sin exigir
+ajustes estructurales. Acta completa: [`docs/14-acta-mini-comite-1.md`](../docs/14-acta-mini-comite-1.md) §6.
+
+**Condición añadida por el comité:** formalizar el control de *timeouts* a
+nivel del servidor HTTP. Esto corresponde al riesgo **R-08** ya documentado
+(el `http.Server` de `back/server/server.go` se construye sin
+`ReadTimeout`, `WriteTimeout` ni `IdleTimeout`).
+
+**Estado de esa condición:** pendiente de implementación. No se ha tocado
+`back/server/server.go`. Queda registrada aquí como deuda explícita, no como
+trabajo hecho.
+
 
 ---
 

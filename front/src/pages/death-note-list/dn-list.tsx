@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import VictimCard from "../../components/list-card/dn-card";
 import "./dn-list.css";
 import type { Kill } from "../../types/Kill";
@@ -12,7 +11,6 @@ export default function VictimList() {
   const victimsPerPage = 10;
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
   const [selectedVictim, setSelectedVictim] = useState<Kill | null>(null);
 const [showModal, setShowModal] = useState(false);
 
