@@ -44,18 +44,21 @@ jobs:
           npm ci
           npm run build
 
-      - name: Backend Build Status
-        if: success()
-        run: echo "✅ Backend build successful"
+      # ----------------------------------------------------------------
+      # Fitness functions
+      # Contrato: docs/15-fitness-function-01.md
+      # Decisión que verifican: adrs/ADR-005-estilo-hexagonal.md
+      # ----------------------------------------------------------------
+      - name: "FF-01 — El dominio no depende de infraestructura"
+        run: bash ./scripts/fitness/ff-01-dominio-sin-infraestructura.sh
 
-      - name: Frontend Build Status
-        if: success()
-        run: echo "✅ Frontend build successful"
+      - name: "FF-01 — Prueba negativa (la regla debe saber fallar)"
+        run: bash ./scripts/fitness/ff-01-dominio-sin-infraestructura.sh --prueba-negativa
 
       - name: CI Summary
         if: always()
         run: |
           echo "Build Summary:"
-          echo "  Backend: Go 1.24.3"
+          echo "  Backend:  Go 1.24.3"
           echo "  Frontend: Node 24.18.0 + npm"
-          echo "  Status: Success"
+          echo "  Fitness:  FF-01 (dominio sin infraestructura) + prueba negativa"
