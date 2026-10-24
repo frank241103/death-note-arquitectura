@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import './kill-register.css';
 import Button from '../../components/button/button';
 import type { Person } from '../../types/person';
