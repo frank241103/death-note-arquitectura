@@ -387,25 +387,25 @@ srv := &http.Server{
 
 ---
 
-## Secciones pendientes de ser completadas por el equipo
+## Secciones completadas en documentos posteriores
 
-Las siguientes secciones serán documentadas en próximas iteraciones:
+> **Nota del 2026-11-06.** Este documento es de agosto y cerraba con una lista
+> de secciones pendientes. **Las tres se completaron**, pero en documentos del
+> Módulo 6, no aquí. Se deja el mapa en lugar de la lista de casillas para que
+> no parezca que siguen abiertas.
 
-### Alcance
-- [ ] Definir qué riesgos son en-scope vs out-of-scope
-- [ ] Especificar criticidad por contexto (desarrollo vs producción)
-- [ ] Priorizar por impacto en mediciones de rendimiento
+| Lo que quedó pendiente en agosto | Dónde se completó | Qué contiene |
+|---|---|---|
+| **Alcance** — riesgos dentro y fuera de alcance, criticidad por contexto | `docs/20-seguridad.md` §1 | Alcance declarado (backend Go y almacén de archivos) y lo que queda fuera: navegador, frontend, host y cadena de dependencias npm |
+| **Clasificación de riesgos** — probabilidad, impacto, matriz, tolerancia | `docs/20-seguridad.md` §4 y §5 | Nueve amenazas con probabilidad e impacto, matriz de cuadrantes y tres riesgos aceptados con su condición de revisión |
+| **Restricciones y dependencias** — terceros, versiones, workarounds | `docs/19-fitness-function-02.md` §2 · `docs/21` §4 | Dependencias internas verificadas por FF-01 y FF-02; las externas, con versión, en `back/go.mod`; los riesgos operativos en la matriz RO-01 a RO-10 |
 
-### Restricciones
-- [ ] Identificar dependencias de terceros (gorilla/mux, GORM, godotenv)
-- [ ] Especificar versiones afectadas
-- [ ] Documentar workarounds conocidos
-
-### Clasificación de riesgos
-- [ ] Probabilidad de ocurrencia (Baja/Media/Alta)
-- [ ] Impacto si ocurre (Insignificante/Menor/Mayor/Crítico)
-- [ ] Matriz de riesgo (Probabilidad × Impacto)
-- [ ] Línea base de tolerancia
+**Lo que sí sigue abierto, y se declara:** los riesgos R-01 a R-08 de este
+documento se verificaron contra el código en agosto. **Dos ya no están
+vigentes**: R-01 se corrigió el 2026-11-06 con el control C-05, y R-06 tiene
+un control implementado aunque desactivado por defecto (C-02, `ADR-008`). El
+resto sigue sin corregir, con su costo declarado en
+`docs/22-evaluacion-arquitectonica.md` §5.
 
 ---
 
