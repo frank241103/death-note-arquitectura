@@ -15,7 +15,7 @@
 | Mediciones de línea base | 4 corridas | ✅ Ejecutadas y publicadas |
 | Spikes con criterio prerregistrado | 1 | ✅ Ejecutado, veredicto validado |
 | Restricciones ejecutables (fitness functions) | 2 | ✅ Corriendo en CI, con prueba negativa |
-| Pruebas de seguridad | 1 | ⬜ Escrita, pendiente de ejecución |
+| Pruebas de seguridad | 1 | ✅ **Ejecutada** — 3 de 6 vectores confirmaron exposición |
 | Verificaciones de escenario con captura | 4 | ✅ Registradas |
 
 ---
@@ -138,7 +138,19 @@ dirección interna) y pueden fallar por separado. Si `repository` importara
 
 ## 5. Prueba de seguridad PS-01 — Intento de fuga de datos
 
-**Estado:** ⬜ **Escrita y versionada, pendiente de ejecución.**
+**Estado:** ✅ **Ejecutada el 2026-11-06** sobre el commit `f7895f4`.
+
+| Vector | Resultado |
+|---|---|
+| A-01 | 🔴 200 · 629.721 bytes · 3602 registros sin credencial |
+| A-03 | ⚠️ 404 por `uploads/` ausente (F-05), no por control de acceso |
+| A-04 | 🔴 200 con listado navegable del directorio |
+| A-05 | ✅ Path traversal bloqueado en los 4 intentos |
+| A-06 | 🔴 `Allow-Origin: *` junto a `Allow-Credentials: true` |
+
+**3 de 6 vectores confirmaron exposición.** Salida cruda en
+`experimentos/prueba-seguridad-01/resultados/ps-01-resultados.txt`.
+Análisis en `docs/20-seguridad.md` §9.
 
 Seis vectores: listado sin credencial, descubrimiento de rutas, descarga de
 imagen, enumeración de directorio, path traversal y CORS con credenciales.
@@ -151,8 +163,9 @@ bash experimentos/prueba-seguridad-01/prueba-fuga-datos.sh
 
 Salida en `experimentos/prueba-seguridad-01/resultados/ps-01-resultados.txt`.
 
-**De qué depende:** el supuesto S-3 de `ADR-008` y las filas 🔶 de
-`docs/20-seguridad.md` §4 (T-03, T-04, T-09).
+**Qué resolvió:** confirmó T-01, T-03 y T-05; descartó T-04; y confirmó el
+supuesto S-3 de `ADR-008`. **T-09 sigue sin comprobar**: es un vector de
+escritura y PS-01 solo ejerce lectura.
 
 ---
 

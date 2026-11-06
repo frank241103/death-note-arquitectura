@@ -1,0 +1,48 @@
+========================================================
+ PS-01 — Intento deliberado de fuga de datos
+ Fecha:   2026-11-06T15:14:56Z
+ Destino: http://localhost:8000
+ Commit:  f7895f4
+========================================================
+
+--- A-01: GET /death sin ninguna credencial ---
+Código HTTP:        200
+Tamaño respuesta:   629721 bytes
+Registros expuestos: 3602
+RESULTADO: FUGA CONFIRMADA — el listado completo se entrega sin autenticación.
+
+--- A-02: extraer una ruta de imagen del listado ---
+Ruta descubierta: /static/1785780123_Captura
+
+--- A-03: GET al archivo estático sin credencial ---
+URL probada:      http://localhost:8000/static/1785780123_Captura
+Código HTTP:      404
+Tamaño:           19 bytes
+Tipo de contenido: text/plain
+RESULTADO: 404 — carpeta uploads/ ausente en este entorno (hallazgo F-05).
+            NO demuestra que exista control de acceso.
+
+--- A-04: GET /static/ (intento de listar el directorio) ---
+Código HTTP: 200
+RESULTADO: FUGA CONFIRMADA — el servidor lista el contenido del directorio.
+
+--- A-05: intento de path traversal en /static/ ---
+  ../.env                -> HTTP 404 (19 bytes)
+  ..%2f.env              -> HTTP 301 (0 bytes)
+  ../../back/.env        -> HTTP 404 (19 bytes)
+  ../test.db             -> HTTP 404 (19 bytes)
+RESULTADO: si todos devolvieron 404/400, http.FileServer está saneando la ruta.
+
+--- A-06: petición cruzada con credenciales desde origen no autorizado ---
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Origin: *
+RESULTADO: CONFIGURACIÓN PELIGROSA CONFIRMADA — se permite origen y credenciales (R-05).
+
+========================================================
+ RESUMEN PS-01
+ Vectores que confirmaron exposición: 3
+
+ Esta prueba documenta el comportamiento observado.
+ No decide qué controles adoptar: eso es docs/20-seguridad.md.
+ Resultados guardados en: /c/Users/DavidRodríguez/U/pa-final/experimentos/prueba-seguridad-01/resultados/ps-01-resultados.txt
+========================================================
