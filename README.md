@@ -190,7 +190,7 @@ Nota arquitectónica: la creación exige `multipart/form-data` mientras la actua
 | 08 | Estilo arquitectónico | [`docs/10-decision-estilo-arquitectonico.md`](docs/10-decision-estilo-arquitectonico.md) | ✅ |
 | 09 | Integración: APIs y eventos | [`docs/09-api-eventos-integracion.md`](docs/09-api-eventos-integracion.md) | ✅ |
 | 10 | Seguridad | [`docs/20-seguridad.md`](docs/20-seguridad.md) | ✅ |
-| 11 | Resiliencia y rendimiento | [`docs/17-matriz-resiliencia.md`](docs/17-matriz-resiliencia.md) + [`docs/16-matriz-fallos.md`](docs/16-matriz-fallos.md) | ✅ |
+| 11 | Resiliencia y rendimiento | [`docs/17-matriz-resiliencia.md`](docs/17-matriz-resiliencia.md) + [`docs/16`](docs/16-matriz-fallos.md) + [`docs/26`](docs/26-experimento-crecimiento.md) | ✅ |
 | 12 | Despliegue y observabilidad | [`docs/21-despliegue-observabilidad.md`](docs/21-despliegue-observabilidad.md) | ✅ |
 | 13 | Riesgos y trade-offs | [`docs/18-comparacion-distribucion-costos.md`](docs/18-comparacion-distribucion-costos.md) + [`docs/16`](docs/16-matriz-fallos.md) | ✅ |
 | 14 | Evaluación arquitectónica | [`docs/22-evaluacion-arquitectonica.md`](docs/22-evaluacion-arquitectonica.md) | ✅ |
@@ -254,6 +254,7 @@ La matriz de trazado registra 18 elementos: 12 verificados, 4 corregidos y
 | [23-evidencia-ejecutable.md](docs/23-evidencia-ejecutable.md) | Índice de todo lo reproducible, con sus comandos |
 | [24-uso-ia.md](docs/24-uso-ia.md) | Declaración completa en los 8 puntos del sílabo |
 | [25-presentacion-final.md](docs/25-presentacion-final.md) | Brief ejecutivo de una página + guion de defensa |
+| [26-experimento-crecimiento.md](docs/26-experimento-crecimiento.md) | Barrido de carga de 4 escalones · saturación en ~23 req/s |
 
 ### 6.6 Registros de decisión arquitectónica
 
@@ -276,9 +277,12 @@ La matriz de trazado registra 18 elementos: 12 verificados, 4 corregidos y
 |---|---|---|
 | Línea base ESC-01 — 4 corridas, 2 máquinas | [`experimentos/medicion-escenario-01/`](experimentos/medicion-escenario-01/) | ✅ Ejecutada |
 | Spike-01 — acoplamiento síncrono con el almacén | [`experimentos/spike-01-integracion/`](experimentos/spike-01-integracion/) | ✅ Ejecutado · **validado** |
+| EC-01 — experimento de crecimiento (4 escalones) | [`experimentos/experimento-crecimiento/`](experimentos/experimento-crecimiento/) | ✅ Ejecutado · **H1 validada** |
+| Pruebas unitarias | `back/api`, `back/models`, `back/server` | ✅ **15 pruebas en CI** (`go test ./...`) |
+| CS-01 — costo de la capa de seguridad sobre el p95 | [`experimentos/costo-seguridad/`](experimentos/costo-seguridad/) | ✅ Medido · por debajo del ruido |
 | FF-01 — el dominio no depende de infraestructura | [`scripts/fitness/ff-01-...`](scripts/fitness/) | ✅ **En CI**, con prueba negativa |
 | FF-02 — dirección de dependencias entre módulos | [`scripts/fitness/ff-02-...`](scripts/fitness/) | ✅ **En CI**, con prueba negativa |
-| PS-01 — intento deliberado de fuga de datos | [`experimentos/prueba-seguridad-01/`](experimentos/prueba-seguridad-01/) | ⬜ Escrita, **pendiente de ejecutar** |
+| PS-01 — intento deliberado de fuga de datos | [`experimentos/prueba-seguridad-01/`](experimentos/prueba-seguridad-01/) | ✅ **Ejecutada** · 3 de 6 vectores confirmaron exposición |
 | Verificación de escenarios ESC-02 a ESC-05 | [`experimentos/verificacion-escenarios/`](experimentos/verificacion-escenarios/) | ✅ 4 capturas |
 
 Índice completo con comandos de reproducción: [`docs/23-evidencia-ejecutable.md`](docs/23-evidencia-ejecutable.md).
@@ -297,7 +301,8 @@ La matriz de trazado registra 18 elementos: 12 verificados, 4 corregidos y
 | run-2 | Intel i7-1255U | 1350 | 1615,73 | 0% |
 | run-3 | Intel i7-1255U | 2205 | 613,66 | 0% |
 | run-4 | AMD Ryzen 5 3400G | 1690 | 640,72 | 0% |
-| **Mediana válida** | — | — | **1114,69** | **0%** |
+| **Mediana válida** (run-2 y run-3, misma máquina) | — | — | **1114,69** | **0%** |
+| **run-5 — re-medición final** (2026-11-06, commit `772378b`) | Intel i7-1255U | 1290 | **1990,00** | **0%** |
 
 ### Veredicto: NO CUMPLE — 2,23× sobre el umbral
 
@@ -330,10 +335,8 @@ Evidencia: [experimentos/medicion-escenario-01/resultados/](experimentos/medicio
 
 | Qué falta | Dónde está escrito |
 |---|---|
-| PS-01 está escrita pero no ejecutada | [`docs/20`](docs/20-seguridad.md) §9 |
-| De 8 controles de seguridad, 1 implementado | [`docs/20`](docs/20-seguridad.md) §6 |
-| De 9 tácticas de resiliencia, 1 validada | [`docs/17`](docs/17-matriz-resiliencia.md) §1 |
-| Experimento de crecimiento y táctica medida antes/después | [`docs/23`](docs/23-evidencia-ejecutable.md) §7, N-01 y N-02 |
+| De 8 controles de seguridad, 3 implementados | [`docs/20`](docs/20-seguridad.md) §6 |
+| De 9 tácticas de resiliencia, 2 validadas | [`docs/17`](docs/17-matriz-resiliencia.md) §1 |
 | El despliegue en contenedores nunca se ejecutó | [`docs/21`](docs/21-despliegue-observabilidad.md) §1.2 |
 | Timeouts del `http.Server` — condición del mini-comité | [`ADR-005`](adrs/ADR-005-estilo-hexagonal.md), [`docs/22`](docs/22-evaluacion-arquitectonica.md) §5 |
 | El ID del riesgo de paginación es inconsistente entre documentos propios | [`docs/16`](docs/16-matriz-fallos.md) §4 |

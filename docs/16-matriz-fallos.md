@@ -41,7 +41,7 @@ Esta distinción es el control que pide A2. No se mezclan.
 | **F-07** | `repository` → `handleGetAllKills` | `GET /death` con la base sembrada (3302 registros) | Respuesta de **557 kB**; p95 de 1114,69 ms contra un umbral prerregistrado de 500 ms | `back/repository/kill_repository.go:22` — `k.db.Find(&kills)` sin límite. Escenario **ESC-01**. Corridas: `run-1.json` a `run-4.json` | ✅ **OBSERVADO** — medido en 2 máquinas, 4 corridas |
 | **F-08** | `server` — `handleCreateKill` | `POST /death` con cuerpo `application/json` | `400`: *"formato inválido: request Content-Type isn't multipart/form-data"*. El mensaje de error del handler menciona además campos `firstName` y `lastName` que no existen en el DTO | Escenario **ESC-05**. Captura: `esc-05-rechazo-400.png.png`. Contrato en `docs/09-api-eventos-integracion.md` §2 | ✅ **OBSERVADO** |
 | **F-09** | `server` — escritura de imagen en `POST /death` | 10 usuarios concurrentes creando registros | p95 de **1730,45 ms** contra un umbral prerregistrado de 1000 ms. Razón p95/mediana: **37,7×** | `back/server/kill_handlers.go:110-121`. Spike-01: `experimentos/spike-01-integracion/resultados/post-baseline.json` | ✅ **OBSERVADO** |
-| **F-10** | `server` — traza de arranque | Arranque normal del backend | Imprime `HOST: host=%!s(MISSING) user=%!s(MISSING)…`: el `fmt.Println` tiene 4 verbos `%s` y cero argumentos | `back/server/server.go`. Riesgo **R-01**. Reproducible en cualquier arranque | ✅ **OBSERVADO** |
+| **F-10** | `server` — traza de arranque | Arranque normal del backend | Imprimía `HOST: host=%!s(MISSING) user=%!s(MISSING)…`: el `fmt.Println` tenía 4 verbos `%s` y cero argumentos | `back/server/server.go`. Riesgo **R-01** | ✅ **OBSERVADO** → 🟢 **CORREGIDO el 2026-11-06** (control C-05). Ver §7 |
 
 ---
 
@@ -101,3 +101,33 @@ presentarlos como observados.
 | `experimentos/medicion-escenario-01/resultados/` | 4 corridas de ESC-01 + integridad SHA256 |
 | `experimentos/spike-01-integracion/resultados/` | Medición de F-09 |
 | `docs/06-c4-contenedores.md`, `docs/07-c4-componentes.md` | Componentes que las filas referencian |
+
+
+---
+
+## 7. Fallos corregidos
+
+Un fallo corregido no se borra de esta matriz: se marca. Borrarlo haría
+desaparecer la evidencia de que existió.
+
+### F-10 — traza de arranque que formateaba credenciales
+
+| | |
+|---|---|
+| **Corregido el** | 2026-11-06 |
+| **Control aplicado** | C-05 (`docs/20-seguridad.md` §6) |
+| **Amenaza que cerraba** | T-06 — exposición de la contraseña de base |
+| **Cómo se detectó la urgencia** | `go vet`, al añadirse las pruebas unitarias, hizo fallar `go test ./...` con `fmt.Sprintf format %s reads arg #1, but call has 0 args` |
+
+**Por qué se eliminó en lugar de completarse.** La línea tenía cuatro verbos
+`%s` y cero argumentos, así que imprimía `%!s(MISSING)` y **no filtraba nada**.
+La corrección aparentemente obvia —pasarle los argumentos que le faltaban—
+habría impreso la contraseña de la base en texto plano en cada arranque, es
+decir, habría convertido el defecto en la fuga T-06. Se eliminó la traza
+entera.
+
+**Nota metodológica.** El defecto llevaba documentado desde agosto sin
+corregirse. Lo que forzó la corrección no fue una revisión, sino **añadir
+pruebas automáticas**: `go test` ejecuta `go vet`, y `go vet` no dejó pasar el
+formato inválido. Es un argumento a favor de la automatización que el equipo
+no tenía antes.

@@ -24,19 +24,21 @@ una verificación contra código que la respalde.
 
 | Qué se decidió | Evidencia | Veredicto |
 |---|---|---|
-| El acceso a medios pasará por un puerto con autorización (`ADR-008`) | Decisión documentada; implementación pendiente | 🔶 **Decidido, no vigente** |
+| El acceso a medios pasa por autorización (`ADR-008`) | `back/server/media_auth.go`, 6 pruebas unitarias, costo medido | ✅ **Implementado**, desactivado por defecto según RA-01 |
+| Eliminar la traza que formateaba credenciales (C-05) | `server.go`; `go vet` en CI impide que vuelva | ✅ **Implementado y protegido** |
 | El dominio no alcanza `os`, `net`, `net/http` ni terceros (`FF-01`) | CI en verde, con prueba negativa | ✅ **Vigente y verificado** |
 | Se opera sin autenticación (RA-01) | Riesgo aceptado, con condición de revisión | ✅ **Declarado explícitamente** |
 
-**Lectura honesta:** el driver de mayor prioridad es el que menos controles
-implementados tiene. Siete de ocho controles de `docs/20` §6 están propuestos.
-Lo que sí existe es el **mapa completo**: inventario de activos, límites de
-confianza, nueve amenazas clasificadas y una prueba ejecutable escrita.
+**Lectura honesta:** tres de ocho controles están implementados (C-02, C-05,
+C-08) y cinco siguen propuestos. El mapa está completo: inventario de activos,
+límites de confianza, nueve amenazas clasificadas y una prueba de fuga
+**ejecutada** que confirmó tres vectores.
 
-La contradicción entre "seguridad es la prioridad 1" y "un control
-implementado" **es real y se deja visible**. Su causa está en RA-01: mientras
-el sistema sea local y con datos ficticios, el equipo decidió invertir en que
-los controles sean *posibles* antes que en activarlos.
+La distancia entre "seguridad es la prioridad 1" y "cinco controles sin
+implementar" **sigue siendo real y se deja visible**. Su causa está en RA-01:
+mientras el sistema sea local y con datos ficticios, el equipo invirtió en que
+los controles fueran *posibles y medibles* antes que en activarlos. C-02 es el
+ejemplo: existe, está probado y su costo está medido, pero viene apagado.
 
 ### Mantenibilidad — prioridad 2
 
@@ -113,7 +115,7 @@ declaradas; el proceso de obtener y verificar evidencia se sostuvo.
 
 | # | Debilidad | Por qué importa |
 |---|---|---|
-| **W-01** | El driver de prioridad 1 tiene 1 de 8 controles implementados | Hay distancia entre lo priorizado y lo construido |
+| **W-01** | El driver de prioridad 1 tiene 3 de 8 controles implementados | Sigue habiendo distancia entre lo priorizado y lo construido |
 | **W-02** | La arquitectura hexagonal no tiene un solo puerto escrito | `ADR-005` es una decisión sin materialización |
 | **W-03** | El despliegue en contenedores nunca se ejecutó | Ninguna medición describe el modo declarado |
 | **W-04** | Los logs no permiten diagnosticar el problema que el proyecto mejor conoce | El encolamiento se vio con k6, no desde dentro |
@@ -131,7 +133,7 @@ Orden derivado de `ADR-004` y del costo medido, no de preferencia.
 | # | Acción | PC | Cierra |
 |---|---|---:|---|
 | 1 | Timeouts en `http.Server` | 1 | R-08, F-01, T-07. **Exigido por el comité** |
-| 2 | Eliminar la traza que formatea credenciales | 1 | T-06, R-01 |
+| ~~2~~ | ~~Eliminar la traza que formatea credenciales~~ | — | ✅ **Hecho el 2026-11-06** (C-05) |
 | 3 | Caso `default` en la selección de motor | 1 | F-03, R-04 |
 | 4 | Crear `uploads/` al arrancar + `.gitkeep` | 1 | F-05 |
 | 5 | Paginación con tope por defecto | 2 | T-01, T-08, ESC-01 |
@@ -148,7 +150,7 @@ Orden derivado de `ADR-004` y del costo medido, no de preferencia.
 | # | Acción | PC | Materializa |
 |---|---|---:|---|
 | 10 | Extraer el puerto `AlmacenDeImagenes` y su adaptador de disco | 5 | `ADR-005`, `ADR-008` |
-| 11 | Autorización delante del acceso a medios | 2 | C-02, T-02, T-03 |
+| ~~11~~ | ~~Autorización delante del acceso a medios~~ | — | ✅ **Hecho el 2026-11-06** (C-02) |
 | 12 | Extraer `media` como paquete propio | 4 | Cierra W-05: `FF-02` pasa a verificar 6/6 celdas |
 | 13 | Puerto de persistencia para `kill` | 5 | `ADR-005` completo |
 | 14 | Levantar el compose y corregir D-01 a D-05 | 5 | W-03 |

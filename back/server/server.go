@@ -71,7 +71,18 @@ func (s *Server) initDB() {
 	if err != nil {
 		s.logger.Fatal(err)
 	}
-	fmt.Println("HOST:", fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable"))
+	// Control C-05 (docs/20-seguridad.md §6) — atiende la amenaza T-06.
+	//
+	// Aqui habia una traza de arranque que formateaba la cadena de conexion:
+	//     fmt.Println("HOST:", fmt.Sprintf("host=%s user=%s password=%s ..."))
+	//
+	// Tenia cuatro verbos %s y cero argumentos, asi que imprimia
+	// "%!s(MISSING)" y no filtraba nada. El riesgo no era lo que imprimia,
+	// sino lo que habria impreso en cuanto alguien "arreglara" la linea
+	// pasandole los argumentos: la contrasena de la base en texto plano.
+	//
+	// Se elimina en lugar de completarla. Riesgo R-01, fallo F-10.
+	// go vet la detectaba y hacia fallar `go test ./...`.
 
 	switch s.Config.Database {
 	case "sqlite":

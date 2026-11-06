@@ -38,6 +38,14 @@ jobs:
           go mod download
           go build ./...
 
+      - name: "Pruebas unitarias del dominio"
+        working-directory: back
+        run: go test ./api/... ./models/... -v
+
+      - name: "Pruebas del resto de paquetes"
+        working-directory: back
+        run: go test ./... 
+
       - name: Build Frontend
         working-directory: front
         run: |
@@ -65,7 +73,7 @@ jobs:
         if: always()
         run: |
           echo "Build Summary:"
-          echo "  Backend:  Go 1.24.3"
+          echo "  Backend:  Go 1.24.3 + go test"
           echo "  Frontend: Node 24.18.0 + npm"
           echo "  Fitness:  FF-01 (dominio sin infraestructura) + prueba negativa"
           echo "            FF-02 (direccion de dependencias)  + prueba negativa"
