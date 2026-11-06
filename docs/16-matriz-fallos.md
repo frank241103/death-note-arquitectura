@@ -35,6 +35,7 @@ Esta distinción es el control que pide A2. No se mezclan.
 | **F-03** | `server` — `switch` de selección de motor | `config.json` declara un motor no contemplado (p. ej. `mongodb`) | `s.DB` queda nulo porque el `switch` no tiene caso `default`; pánico en `AutoMigrate` | `back/server/server.go`, `switch s.Config.Database` sin `default`. Escenario **ESC-04**. Captura: `esc-04-mongodb-panic.png.png`. Riesgo **R-04** | ✅ **OBSERVADO** |
 | **F-04** | `File Server` (`http.FileServer` sobre `uploads/`) | `GET /static/<archivo>` sin ninguna credencial | El archivo se entrega. No hay middleware de autorización en esa ruta | `back/server/router.go:15` — `PathPrefix("/static/")` registrado fuera de cualquier control. Escenario **ESC-02**. Riesgo **R-06** | ✅ **OBSERVADO** |
 | **F-11** | `File Server` | `GET /static/` sin credencial | **HTTP 200 con listado navegable del directorio.** Permite enumerar los archivos sin conocer ningún nombre | PS-01 vector A-04, `experimentos/prueba-seguridad-01/resultados/ps-01-resultados.txt` | ✅ **OBSERVADO** — 2026-11-06 |
+| **F-13** | `seed-load.js` — instrumentación de la medición | Crear un registro y comprobar que «persiste el nombre» | El check lee `fullName` de la **respuesta** del POST, que es el DTO recién recibido, no un dato leído de la base. **Pasa aunque el dato se pierda** — y en este sistema se pierde: `models.Kill` declara `FullName` con `gorm:"-"` | `back/models/kill.go` · prueba `TestFullNameNoSePersiste` · riesgo **R-07** | ✅ **OBSERVADO** — detectado en revisión externa el 2026-11-06 |
 | **F-12** | `File Server` | `GET /static/../.env` y variantes | Rechazado: 404 en tres variantes, 301 en la codificada. `http.FileServer` sanea la ruta | PS-01 vector A-05 | ✅ **VERIFICADO COMO AUSENTE** — es un fallo que se buscó y **no** existe |
 | **F-05** | `File Server` — reproducibilidad | Clonar el repositorio limpio y pedir `GET /static/<archivo>` | **404**: la carpeta `back/uploads/` está en `.gitignore`, así que no existe en un clon nuevo y el `FileServer` no tiene nada que servir | Captura: `esc-02-static-404.png.png`. `.gitignore` línea `back/uploads/` | ✅ **OBSERVADO** — hallazgo de reproducibilidad, distinto de F-04 |
 | **F-06** | `server` — configuración de CORS | Petición cruzada desde cualquier origen con credenciales | Responde con `Access-Control-Allow-Origin: *` **y** `Access-Control-Allow-Credentials: true` a la vez | `back/server/server.go`. Confirmado por PS-01 A-06 (`prueba-seguridad-01/resultados/`). Riesgo **R-05** | ✅ **OBSERVADO** — 2026-11-06 |
@@ -82,6 +83,7 @@ renumerar riesgos citados en seis documentos.
 ## 5. Qué falta para que esta matriz esté completa
 
 | # | Pendiente | Para pasar de HIPOTÉTICO a OBSERVADO |
+| M-3 | F-13 — demostrar la persistencia de verdad | Añadir un `GET /death/{id}` después del POST y comparar. No se hace sobre `seed-load.js` para no desincronizarlo de los resultados ya publicados: iría en un script nuevo |
 |---|---|---|
 | M-1 | F-01 (Slowloris) | Ejecutar un cliente que abra conexiones lentas y registrar el agotamiento |
 | ~~M-2~~ | ~~F-06 (CORS)~~ | ✅ **Resuelto el 2026-11-06** por PS-01 A-06: las cabeceras quedaron capturadas |
@@ -131,3 +133,31 @@ corregirse. Lo que forzó la corrección no fue una revisión, sino **añadir
 pruebas automáticas**: `go test` ejecuta `go vet`, y `go vet` no dejó pasar el
 formato inválido. Es un argumento a favor de la automatización que el equipo
 no tenía antes.
+
+
+### F-13 — un check que daba confianza falsa
+
+| | |
+|---|---|
+| **Detectado el** | 2026-11-06, en revisión externa del repositorio |
+| **Dónde** | `experimentos/medicion-escenario-01/scripts/seed-load.js:133` |
+| **Riesgo relacionado** | R-07 — `fullName` no se persiste |
+
+La observación externa fue que comprobar `fullName` en la respuesta del POST
+**no demuestra persistencia**: haría falta una lectura posterior. Es correcta.
+
+Al verificarla encontramos que el problema es peor de lo señalado: el campo
+que el check vigila es **precisamente el que sabemos que no se guarda**.
+`models.Kill` declara `FullName` con la etiqueta `gorm:"-"`, que indica a GORM
+que lo ignore. El handler devuelve el DTO que acaba de recibir, así que el
+check pasa siempre, haya persistido o no.
+
+**Un check verde que no verifica nada es peor que no tener check**, porque
+produce confianza.
+
+**Qué se hizo:** se documentó en el propio script, con el motivo y la
+referencia a la prueba unitaria que fija el comportamiento. **No se renombró
+ni se eliminó**: ese script produjo los resultados publicados en
+`spike-01-integracion/resultados/`, y cambiarlo lo desincronizaría de su
+salida. La corrección real —un `GET` posterior sobre el id devuelto— va en un
+script nuevo, y queda declarada como M-3.

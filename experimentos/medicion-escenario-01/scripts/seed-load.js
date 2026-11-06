@@ -127,6 +127,25 @@ export default function () {
 
   latenciaEscritura.add(res.timings.duration);
 
+  // ADVERTENCIA SOBRE EL CHECK 'persiste el nombre' (revision del 2026-11-06).
+  //
+  // Ese check lee fullName de la RESPUESTA del POST, no de la base. El handler
+  // devuelve el DTO que acaba de recibir, de modo que el check pasa aunque el
+  // dato no se haya guardado.
+  //
+  // Y en este sistema NO se guarda: models.Kill declara FullName con la
+  // etiqueta `gorm:"-"`, que indica a GORM que no lo persista. Es el riesgo
+  // R-07 (dossier/01-contexto-sistema.md). La prueba unitaria
+  // TestFullNameNoSePersiste (back/models/kill_test.go) fija ese
+  // comportamiento.
+  //
+  // Es decir: el check da confianza falsa. Demostrar persistencia exigiria un
+  // GET posterior sobre el id devuelto.
+  //
+  // NO se renombra ni se elimina a proposito: este script produjo los
+  // resultados publicados en spike-01-integracion/resultados/, y cambiarlo
+  // desincronizaria el script de su salida. Queda documentado como fallo F-13
+  // en docs/16-matriz-fallos.md.
   const ok = check(res, {
     'status 201 Created':   (r) => r.status === 201,
     'devuelve id':          (r) => { try { return JSON.parse(r.body).id > 0; } catch { return false; } },

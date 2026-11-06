@@ -25,7 +25,11 @@ Repositorio de trabajo del equipo para la asignatura. Contiene el sistema base a
 ## 2. Sistema Base Adoptado
 
 **Opción del protocolo:** C (proyecto externo)
-**Estado de autorización docente:** PENDIENTE DE CONFIRMAR
+**Estado de autorización docente:** **AUTORIZADO.** El profesor permitió usar
+un proyecto anterior como sistema base y pidió identificar explícitamente las
+partes heredadas. `[SUPUESTO]` La autorización fue **verbal, dada en clase**;
+no existe documento formal y no se fabrica uno.
+**Separación heredado / aportado:** [`docs/27-herencia-y-aportes.md`](docs/27-herencia-y-aportes.md)
 
 | Atributo | Valor |
 |---|---|
@@ -46,6 +50,26 @@ git log --format="%h %an %s"
 git remote -v
 # upstream apunta al repositorio original
 ```
+
+---
+
+### Qué es heredado y qué es de este semestre
+
+La frontera es un commit, no una afirmación:
+
+| Commit | Fecha | Autor | Qué es |
+|---|---|---|---|
+| `4ebec3b` | 2025-05-19 | `sergiocoba-IND` | **Último commit heredado** · 54 archivos |
+| `308490f` | 2026-08-24 | David Rodríguez | **Primer commit del equipo** |
+
+El sistema heredado **no contenía ningún documento de arquitectura, medición,
+experimento, prueba automatizada ni integración continua**. De los 54 archivos
+heredados, el equipo modificó 11 y dejó 43 intactos; el código de negocio
+—handlers, repositorio, modelos y DTO— **no se tocó**, porque el objeto de la
+asignatura era evaluar una arquitectura existente, no reescribirla.
+
+Reconstruible con `git diff 4ebec3b HEAD --stat`. Detalle completo en
+[`docs/27-herencia-y-aportes.md`](docs/27-herencia-y-aportes.md).
 
 ---
 
@@ -122,6 +146,18 @@ sembrar-datos.cmd
 ```
 
 Inserta 3.000 registros vía `POST /death`. Tarda unos minutos.
+
+> **Cuál semilla alimenta cada experimento.** Hay dos mecanismos y producen
+> volúmenes distintos; conviene no confundirlos:
+>
+> | Mecanismo | Inserta | Para qué |
+> |---|---|---|
+> | `sembrar-datos.cmd` (este paso) | 3.000 registros | Construir la semilla inicial de ESC-01 |
+> | `scripts/seed-load.js` (k6) | 300 por corrida | Medir la **latencia de inserción** del spike-01, no sembrar |
+>
+> Los volúmenes observados en las mediciones son el acumulado: **3302
+> registros** en agosto y **3602** tras las corridas de noviembre. Cada
+> documento de experimento declara el volumen con el que midió.
 
 Alternativa con k6, con condiciones de carga explícitas:
 
@@ -255,6 +291,7 @@ La matriz de trazado registra 18 elementos: 12 verificados, 4 corregidos y
 | [24-uso-ia.md](docs/24-uso-ia.md) | Declaración completa en los 8 puntos del sílabo |
 | [25-presentacion-final.md](docs/25-presentacion-final.md) | Brief ejecutivo de una página + guion de defensa |
 | [26-experimento-crecimiento.md](docs/26-experimento-crecimiento.md) | Barrido de carga de 4 escalones · saturación en ~23 req/s |
+| [27-herencia-y-aportes.md](docs/27-herencia-y-aportes.md) | **Qué es heredado y qué es del semestre**, con el commit que los separa |
 
 ### 6.6 Registros de decisión arquitectónica
 
@@ -381,9 +418,11 @@ en lugar de borrarla en silencio.
   riesgo aceptado RA-03 en [`docs/20`](docs/20-seguridad.md) §7 y §8.
 - **La variabilidad térmica entre corridas es hipótesis, no causa demostrada:**
   no se midió frecuencia ni temperatura.
-- **La autorización docente para adoptar el sistema base (opción C) sigue
-  pendiente de confirmar.** El autor original está reconocido en
-  [`ADR-001`](adrs/ADR-001-adopcion-opcion-c.md).
+- **La autorización docente fue verbal**, no escrita. Se deja constancia de
+  ello en lugar de fabricar un documento formal. El autor original está
+  reconocido en [`ADR-001`](adrs/ADR-001-adopcion-opcion-c.md) y la separación
+  entre lo heredado y lo aportado, en
+  [`docs/27`](docs/27-herencia-y-aportes.md).
 
 > **Regresión del CI — resuelta el 2026-10-23.** El workflow fallaba en la
 > compilación del frontend. La causa no era `npm ci` como se creyó
