@@ -117,7 +117,7 @@ declaradas; el proceso de obtener y verificar evidencia se sostuvo.
 |---|---|---|
 | **W-01** | El driver de prioridad 1 tiene 3 de 8 controles implementados | Sigue habiendo distancia entre lo priorizado y lo construido |
 | **W-02** | La arquitectura hexagonal no tiene un solo puerto escrito | `ADR-005` es una decisión sin materialización |
-| **W-03** | El despliegue en contenedores nunca se ejecutó | Ninguna medición describe el modo declarado |
+| **W-03** | El despliegue en contenedores nunca se ejecutó (sin Docker en las máquinas disponibles) | Ninguna medición describe el modo declarado. La auditoría estática contra el código encontró 7 defectos, 2 de ellos bloqueantes (`docs/21` §1.3) |
 | **W-04** | Los logs no permiten diagnosticar el problema que el proyecto mejor conoce | El encolamiento se vio con k6, no desde dentro |
 | **W-05** | Dos de seis celdas de la matriz de `ADR-006` no se verifican | `media` no existe como paquete |
 | **W-06** | El ID del riesgo de paginación es inconsistente entre documentos propios | `docs/16` §4 |
@@ -153,7 +153,7 @@ Orden derivado de `ADR-004` y del costo medido, no de preferencia.
 | ~~11~~ | ~~Autorización delante del acceso a medios~~ | — | ✅ **Hecho el 2026-11-06** (C-02) |
 | 12 | Extraer `media` como paquete propio | 4 | Cierra W-05: `FF-02` pasa a verificar 6/6 celdas |
 | 13 | Puerto de persistencia para `kill` | 5 | `ADR-005` completo |
-| 14 | Levantar el compose y corregir D-01 a D-05 | 5 | W-03 |
+| 14 | Corregir D-04, D-06 y D-07; después levantar el compose y verificar | 3 + verificación | W-03 |
 
 ### Horizonte 3 — Condicionado, no planificado
 

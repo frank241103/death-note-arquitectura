@@ -57,21 +57,118 @@ el comportamiento del despliegue en contenedores. El `ADR-002` fija SQLite como
 línea base precisamente por eso, y `docs/18` §4 documenta que pasar a réplicas
 exige migrar primero el motor.
 
-### 1.3 Defectos detectados en el compose (lectura de código, sin ejecutar)
+### 1.3 Defectos detectados (revisión estática, 2026-11-06)
 
-| ID | Defecto | Dónde | Efecto esperado |
+No fue posible ejecutar el compose: **Docker no está instalado en ninguna de
+las máquinas disponibles** y son equipos corporativos donde el equipo no puede
+instalarlo. En lugar de dar la topología por buena, se auditó **contra el
+código fuente y la documentación de las herramientas**.
+
+Cada defecto declara su grado de evidencia:
+
+- ✅ **VERIFICADO** — se comprueba leyendo el código; no depende de ejecutar.
+- 🔶 **DEDUCIDO** — se infiere del archivo; haría falta ejecutar para confirmarlo.
+
+| ID | Defecto | Evidencia | Efecto esperado |
 |---|---|---|---|
-| **D-01** | El volumen de PostgreSQL monta `/var/lib/postgresql`, no `/var/lib/postgresql/data` | `docker-compose.yml`, servicio `postgres` | La ruta que PostgreSQL usa para los datos queda **dentro** del punto de montaje pero no es el punto de montaje: la persistencia real queda sin verificar. 🔶 No comprobado |
-| **D-02** | Dos archivos `.env` distintos: `./back/.env` para el backend y `./.env` para postgres | `env_file` de cada servicio | Las credenciales deben mantenerse sincronizadas a mano en dos sitios. Se relaciona con R-05 |
-| **D-03** | `postgres` publica `5432` al host | `ports` | La base queda accesible desde fuera de la red `PA`. Amplía la superficie del límite de confianza 2 (`docs/20` §3) |
-| **D-04** | El frontend recibe `FRONT_BACKEND=http://localhost:8000` | `environment` | `localhost` dentro del contenedor es el propio contenedor, no el backend. En la red `PA` debería ser `http://backend:8000` |
-| **D-05** | El contenedor se llama `frontend-vue-app` | `container_name` | El frontend es React + Vite, no Vue. Cosmético, pero desorienta a quien lo opere |
-
-> Los cinco salen de leer el archivo. **Ninguno está verificado ejecutando**,
-> por la razón de §1.2. Se reportan como hallazgos de revisión, no como fallos
-> observados.
+| **D-01** | El volumen de PostgreSQL monta `/var/lib/postgresql`, no `/var/lib/postgresql/data` | 🔶 **DEDUCIDO** — `docker-compose.yml`, servicio `postgres` | El directorio de datos queda *dentro* del punto de montaje, así que los datos probablemente persistan, pero no es la ruta documentada por la imagen oficial y puede provocar problemas de propiedad de archivos |
+| **D-02** | Dos archivos `.env` distintos: `./back/.env` para el backend y `./.env` para postgres | ✅ **VERIFICADO** — `env_file` de cada servicio | Las credenciales deben mantenerse sincronizadas a mano en dos sitios. Relacionado con R-05 |
+| **D-03** | `postgres` publica `5432` al host | ✅ **VERIFICADO** — `ports` | La base queda accesible fuera de la red `PA`. Amplía la superficie del límite de confianza 2 |
+| **D-04** | **El nombre de la variable de entorno no coincide con el que el frontend lee** | ✅ **VERIFICADO** | Ver análisis abajo |
+| **D-05** | El contenedor se llama `frontend-vue-app` | ✅ **VERIFICADO** — `container_name` | El frontend es React + Vite, no Vue. Cosmético, pero desorienta |
+| **D-06** | `back/Dockerfile` ejecuta `COPY .env .env`, y `.env` está en `.gitignore` | ✅ **VERIFICADO** | **La construcción de la imagen falla** en cualquier clon limpio: el archivo no existe en el contexto de build |
+| **D-07** | El volumen de imágenes se monta en `/app/uploads`, pero la aplicación lee `uploads/` desde `/build` | ✅ **VERIFICADO** | **Las imágenes no se guardan ni se sirven desde el volumen** |
 
 ---
+
+#### D-04 — corrección de un análisis previo
+
+> ⚠️ **Una versión anterior de este documento afirmaba que el defecto era que
+> `FRONT_BACKEND=http://localhost:8000` apuntaba al propio contenedor del
+> frontend. Esa afirmación era incorrecta y se retira.**
+>
+> El código del frontend se ejecuta en el **navegador del usuario**, no dentro
+> del contenedor: `import.meta.env` lo resuelve Vite en tiempo de compilación
+> y el `fetch` lo lanza el navegador. Desde el navegador, `localhost:8000`
+> resuelve al puerto publicado por el host, que sí llega al backend. **Esa
+> parte estaba bien.**
+
+El defecto real es otro, y es más grave:
+
+```
+docker-compose.yml:   FRONT_BACKEND=http://localhost:8000
+front/src/pages/kill-register/kill-register.tsx:5
+front/src/pages/death-note-list/dn-list.tsx:5
+                      const BACKEND = import.meta.env.VITE_FRONT_BACKEND;
+```
+
+**Vite solo expone al código las variables de entorno con prefijo `VITE_`.**
+El compose define `FRONT_BACKEND`; el código lee `VITE_FRONT_BACKEND`. Son
+nombres distintos, así que `BACKEND` queda `undefined` y **las dos páginas que
+consumen la API apuntan a `undefined/death`**.
+
+Se agrava con que **no existe ningún archivo `.env` en `front/`**, de modo que
+tampoco hay otra vía por la que la variable pudiera llegar.
+
+**Corrección:** renombrar la variable a `VITE_FRONT_BACKEND` en el compose.
+1 punto de cambio.
+
+---
+
+#### D-06 — la imagen del backend no se puede construir
+
+```dockerfile
+COPY . .
+COPY .env .env      # <- .env esta en .gitignore
+```
+
+`.gitignore` ignora `.env`, `*/.env` y `**/.env`. En un clon limpio el archivo
+no existe, y `COPY` de un archivo ausente **aborta la construcción**.
+
+Es el mismo fenómeno que el fallo **F-02** (el backend no arranca sin `.env`),
+pero una capa más abajo: aquí ni siquiera se llega a construir la imagen.
+
+**Corrección:** eliminar esa línea —`COPY . .` ya copiaría el archivo si
+existiera— y pasar la configuración por `env_file`, que es lo que el compose
+ya hace. 1 punto de cambio.
+
+---
+
+#### D-07 — el volumen de imágenes apunta a una ruta que nadie usa
+
+| Dónde | Qué dice |
+|---|---|
+| `docker-compose.yml` | `volumes: - ./back/uploads:/app/uploads` |
+| `back/Dockerfile` | `WORKDIR /build` · `CMD ["/build/backend-avanzada.o"]` |
+| `back/server/router.go:15` | `http.FileServer(http.Dir("uploads/"))` — ruta **relativa** |
+| `back/server/kill_handlers.go:112` | `savePath := fmt.Sprintf("uploads/%s", fileName)` — relativa |
+
+El proceso corre con directorio de trabajo `/build`, así que lee y escribe en
+**`/build/uploads`**. El volumen está montado en **`/app/uploads`**, donde no
+hay nada que lo lea.
+
+**Consecuencia:** las imágenes subidas se escribirían dentro del contenedor y
+**se perderían al recrearlo**; y las que hubiera en `./back/uploads` en el host
+nunca se servirían. Es el fallo **F-05** reaparecido por otra vía.
+
+**Corrección:** alinear las rutas — montar en `/build/uploads`, o fijar
+`WORKDIR /app`. 1 punto de cambio.
+
+---
+
+#### Qué significa este bloque
+
+Dos de los siete defectos (**D-06** y **D-07**) impedirían que el despliegue
+funcionara: uno bloquea la construcción y el otro rompe el almacén de
+imágenes. **Los tres defectos nuevos salieron de contrastar el compose contra
+el código fuente**, que es un trabajo que no se había hecho: la revisión
+anterior solo leyó el archivo de compose de forma aislada.
+
+`[EVIDENCIA FALTANTE]` Ninguno está confirmado **ejecutando**. D-02 a D-07
+se verifican leyendo código y por tanto no dependen de ello; D-01 sí lo
+necesita. El coste total de corregir D-04, D-06 y D-07 es de **3 puntos de
+cambio**, pero no se aplican a ciegas: cambiar un despliegue que no se puede
+probar solo cambiaría unos defectos por otros.
 
 ## 2. Plan de observabilidad
 
@@ -157,8 +254,10 @@ definida en `docs/18-comparacion-distribucion-costos.md` §2.
 | ID | Riesgo operativo | P | I | Origen | Tratamiento |
 |---|---|:-:|:-:|---|---|
 | **RO-01** | El despliegue en contenedores no funciona a la primera porque nunca se probó | **A** | **M** | §1.2 | Aceptado. Se declara en el README |
-| **RO-02** | D-04 impide que el frontend hable con el backend dentro de la red | **A** | **A** | §1.3 | Cambiar a `http://backend:8000`. 1 PC |
-| **RO-03** | D-01 hace que los datos de PostgreSQL no persistan entre reinicios | **M** | **A** | §1.3 | Corregir a `/var/lib/postgresql/data`. 1 PC |
+| **RO-02** | D-04: el frontend no recibe la URL del backend porque el nombre de la variable no lleva el prefijo `VITE_` | **A** | **A** | §1.3 ✅ verificado | Renombrar a `VITE_FRONT_BACKEND`. 1 PC |
+| **RO-03** | D-01: ruta de volumen de PostgreSQL no documentada | **B** | **M** | §1.3 🔶 deducido | Corregir a `/var/lib/postgresql/data`. 1 PC |
+| **RO-09** | D-06: la imagen del backend **no se construye** en un clon limpio | **A** | **A** | §1.3 ✅ verificado | Eliminar `COPY .env .env`. 1 PC |
+| **RO-10** | D-07: las imágenes se escriben fuera del volumen y se pierden al recrear el contenedor | **A** | **A** | §1.3 ✅ verificado | Alinear rutas. 1 PC |
 | **RO-04** | Pérdida de imágenes sin copia de seguridad | **M** | **A** | §3 | Sin tratamiento. Riesgo aceptado |
 | **RO-05** | Una incidencia en producción no es diagnosticable con los logs actuales | **A** | **M** | L-01 a L-06 | M-01 a M-04. 5 PC |
 | **RO-06** | Credenciales desincronizadas entre los dos `.env` | **M** | **M** | D-02 | Unificar en un `.env` con prefijos. 2 PC |
@@ -171,8 +270,12 @@ definida en `docs/18-comparacion-distribucion-costos.md` §2.
 
 - **No afirma que el despliegue funcione.** Afirma lo contrario: nunca se
   ejecutó (§1.2).
-- **No afirma que los defectos D-01 a D-05 ocurran.** Se dedujeron leyendo el
-  archivo. Levantar el compose es lo que los confirmaría o refutaría.
+- **Distingue lo verificado de lo deducido.** D-02 a D-07 se comprueban
+  leyendo el código y no dependen de ejecutar; D-01 sí. Levantar el compose
+  sigue siendo lo único que cerraría del todo este apartado.
+- **Corrige un análisis propio anterior** (D-04): la primera versión de este
+  documento razonó mal sobre dónde se ejecuta el código del frontend. La
+  corrección queda registrada en lugar de reescribirse en silencio.
 - **No propone adoptar ninguna herramienta concreta** de observabilidad. Lista
   qué señales hacen falta y qué cambios mínimos las habilitan; elegir el
   stack es una decisión que el equipo no ha tomado.
