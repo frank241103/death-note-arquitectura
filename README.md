@@ -364,10 +364,14 @@ en lugar de borrarla en silencio.
 
 ## 10. Limitaciones Declaradas
 
-- **Docker Compose está declarado pero nunca se ejecutó.** Todas las
-  mediciones se hicieron con `go run main.go` + SQLite, no en contenedores.
-  Leyendo el archivo se detectaron 5 defectos, reportados como hallazgos de
-  revisión y no como fallos observados:
+- **Docker Compose está declarado pero nunca se ejecutó**, porque Docker no
+  está instalado en las máquinas disponibles (equipos corporativos). Todas las
+  mediciones se hicieron con `go run main.go` + SQLite. En su lugar se auditó
+  el compose **contra el código fuente**, lo que reveló **7 defectos, 6 de
+  ellos verificables sin ejecutar**. Dos impedirían que el despliegue
+  funcionara: la imagen del backend no se construye en un clon limpio
+  (`COPY .env`, con `.env` ignorado) y el volumen de imágenes apunta a
+  `/app/uploads` mientras la aplicación lee `/build/uploads`. Detalle en
   [`docs/21`](docs/21-despliegue-observabilidad.md) §1.3.
 - **La rama de PostgreSQL existe en el código pero no se ejecutó.** Los
   resultados sobre SQLite no son extrapolables. Además, replicar el sistema

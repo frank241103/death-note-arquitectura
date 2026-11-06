@@ -279,7 +279,7 @@ Se declara para que nadie lo suponga:
 | ~~N-02~~ | ~~Táctica medida antes/después~~ | ✅ **Resuelto el 2026-11-06.** CS-01 midió T-04 (control C-02) antes y después |
 | ~~N-03~~ | ~~Costo de la capa de seguridad sobre el p95~~ | ✅ **Resuelto el 2026-11-06.** CS-01, `docs/20` §10 |
 | ~~N-04~~ | ~~Pruebas unitarias~~ | ✅ **Resuelto el 2026-11-06.** 15 pruebas en `api`, `models` y `server`, ejecutándose en CI con `go test ./...` |
-| **N-05** | Ejecución del despliegue en contenedores | Nunca se levantó (`docs/21` §1.2) |
+| **N-05** | Ejecución del despliegue en contenedores | Docker no está instalado en las máquinas disponibles. Se sustituyó por una **auditoría estática contra el código**: 7 defectos, 6 verificados sin ejecutar, 2 de ellos bloqueantes (`docs/21` §1.3) |
 
 > **N-01 y N-02 corresponden a la semana 11 del sílabo.** Se declaran como
 > ausentes en lugar de presentar las mediciones existentes como si cubrieran
