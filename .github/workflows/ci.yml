@@ -55,6 +55,12 @@ jobs:
       - name: "FF-01 — Prueba negativa (la regla debe saber fallar)"
         run: bash ./scripts/fitness/ff-01-dominio-sin-infraestructura.sh --prueba-negativa
 
+      - name: "FF-02 — Dirección de dependencias entre módulos"
+        run: bash ./scripts/fitness/ff-02-direccion-dependencias.sh
+
+      - name: "FF-02 — Prueba negativa (la regla debe saber fallar)"
+        run: bash ./scripts/fitness/ff-02-direccion-dependencias.sh --prueba-negativa
+
       - name: CI Summary
         if: always()
         run: |
@@ -62,3 +68,4 @@ jobs:
           echo "  Backend:  Go 1.24.3"
           echo "  Frontend: Node 24.18.0 + npm"
           echo "  Fitness:  FF-01 (dominio sin infraestructura) + prueba negativa"
+          echo "            FF-02 (direccion de dependencias)  + prueba negativa"
