@@ -76,11 +76,11 @@ La columna *Evidencia* distingue lo verificado de lo deducido.
 
 | ID | Amenaza | Activo | Vector | P | I | Evidencia |
 |---|---|---|---|:-:|:-:|---|
-| **T-01** | Lectura masiva no autorizada del registro completo | AC-01 | `GET /death` sin credencial devuelve todos los registros | **A** | **A** | ✅ Medido: 557 kB, 3302 registros (`run-2.json`) |
+| **T-01** | Lectura masiva no autorizada del registro completo | AC-01 | `GET /death` sin credencial devuelve todos los registros | **A** | **A** | ✅ **CONFIRMADA** por PS-01 A-01: HTTP 200, 629.721 bytes, 3602 registros |
 | **T-02** | Descarga no autorizada de imágenes de rostro | AC-02 | `GET /static/<archivo>` sin credencial | **A** | **A** | ✅ Verificado en código: `router.go:15`, sin middleware. Riesgo R-06 |
-| **T-03** | Enumeración del directorio de imágenes | AC-02 | `GET /static/` | **M** | **A** | 🔶 A confirmar con PS-01 vector A-04 |
-| **T-04** | Lectura de archivos fuera de `uploads/` (path traversal) | AC-03, AC-04 | `GET /static/../.env` | **B** | **A** | 🔶 A confirmar con PS-01 vector A-05. `http.FileServer` normalmente sanea, pero no se había comprobado |
-| **T-05** | Exfiltración cruzada con credenciales del usuario | AC-01 | CORS `AllowedOrigins:["*"]` junto a `AllowCredentials:true` | **M** | **A** | ✅ Verificado en código: `server.go`. Riesgo R-05 |
+| **T-03** | Enumeración del directorio de imágenes | AC-02 | `GET /static/` | **A** | **A** | ✅ **CONFIRMADA** por PS-01 A-04: HTTP 200 con listado navegable |
+| **T-04** | Lectura de archivos fuera de `uploads/` (path traversal) | AC-03, AC-04 | `GET /static/../.env` | **MUY B** | **A** | ❌ **NO REPRODUCIBLE.** PS-01 A-05: los 4 intentos rechazados. `http.FileServer` sanea la ruta |
+| **T-05** | Exfiltración cruzada con credenciales del usuario | AC-01 | CORS `AllowedOrigins:["*"]` junto a `AllowCredentials:true` | **B** | **A** | ✅ **CONFIRMADA en cabeceras** por PS-01 A-06. Explotabilidad acotada: ver nota al pie de §5 |
 | **T-06** | Exposición de la contraseña de base en los registros de arranque | AC-03 | `fmt.Println` con 4 verbos `%s` y 0 argumentos | **B** | **A** | ✅ Observado: imprime `%!s(MISSING)`. **Hoy no filtra**, pero cualquiera que "arregle" la línea pasándole los argumentos convierte el error en fuga. Riesgo R-01 |
 | **T-07** | Agotamiento de conexiones (denegación de servicio) | AC-05 | Conexiones lentas sostenidas; `http.Server` sin timeouts | **M** | **M** | 🔶 Deducido de código. Riesgo R-08, fallo F-01 |
 | **T-08** | Saturación por respuesta desproporcionada | AC-05 | `GET /death` concurrente; sin paginación | **A** | **M** | ✅ Medido: p95 1114,69 ms contra umbral de 500 ms |
@@ -90,14 +90,32 @@ La columna *Evidencia* distingue lo verificado de lo deducido.
 
 ## 5. Matriz de probabilidad e impacto
 
+Actualizada tras ejecutar PS-01 el 2026-11-06.
+
 | | **Impacto Bajo** | **Impacto Medio** | **Impacto Alto** |
 |---|---|---|---|
-| **Prob. Alta** | — | T-08 | **T-01 · T-02** |
-| **Prob. Media** | — | T-07 | **T-03 · T-05** |
-| **Prob. Baja** | — | — | T-04 · T-06 · T-09 |
+| **Prob. Alta** | — | T-08 | **T-01 · T-02 · T-03** |
+| **Prob. Media** | — | T-07 | — |
+| **Prob. Baja** | — | — | T-05 · T-06 · T-09 |
+| **Prob. muy baja** | — | — | T-04 |
 
-**Cuadrante crítico (Alta/Alta): T-01 y T-02.** Las dos nacen del mismo hecho:
-no existe el límite de confianza 1.
+**Cuadrante crítico (Alta/Alta): T-01, T-02 y T-03.** Las tres nacen del mismo
+hecho: no existe el límite de confianza 1.
+
+### Qué cambió con la medición
+
+- **T-03 subió** de media a alta: PS-01 A-04 devolvió HTTP 200 con un listado
+  navegable. No era una hipótesis, el servidor sí enumera el directorio.
+- **T-04 bajó** de baja a muy baja: los cuatro intentos de path traversal
+  fueron rechazados. `http.FileServer` sanea la ruta, como suponía S-3 del
+  `ADR-008`. **Un supuesto que la prueba confirmó en lugar de refutar.**
+- **T-05 bajó** de media a baja. La configuración peligrosa está confirmada en
+  cabeceras, pero los navegadores rechazan por sí mismos la combinación
+  `Access-Control-Allow-Origin: *` con `Access-Control-Allow-Credentials: true`,
+  así que la vía del navegador no es explotable tal cual está. El riesgo real
+  aparece si alguien "arregla" la configuración reflejando el origen de la
+  petición: ahí la combinación sí funciona. Un cliente que no sea navegador
+  ignora CORS por completo, de modo que T-01 sigue siendo el camino directo.
 
 ---
 
@@ -128,7 +146,7 @@ revisión.
 | ID | Riesgo que se acepta | Por qué se acepta ahora | Qué lo haría inaceptable |
 |---|---|---|---|
 | **RA-01** | El sistema opera sin autenticación (T-01, T-02) | Es un proyecto académico, con datos ficticios, desplegado en local y sin exposición pública. Implementar C-01 implica un modelo de identidad que el alcance de la asignatura no contempla | Cualquier despliegue accesible desde una red que no sea `localhost`, o datos que dejen de ser ficticios |
-| **RA-02** | T-04 y T-09 quedan sin comprobación hasta ejecutar PS-01 | La prueba existe y está escrita; falta su ejecución registrada | Que PS-01 confirme alguno de los dos: dejarían de ser riesgos aceptados y pasarían a ser defectos a corregir |
+| **RA-02** | ~~T-04 y T-09 sin comprobar~~ → **T-09 queda sin comprobar** | ✅ **Resuelto parcialmente el 2026-11-06.** PS-01 A-05 descartó T-04: los 4 intentos de path traversal fueron rechazados. **T-09 (escritura arbitraria vía nombre de archivo) no lo cubre PS-01**: exige enviar un `POST` con un `filename` manipulado, que es un vector de escritura y no de lectura | Que una prueba de escritura confirme T-09 |
 | **RA-03** | Las vulnerabilidades de dependencias npm del frontend no se tratan | Fuera del alcance declarado en §1; el backend es el sistema modelado | Que una de ellas resulte explotable desde el backend |
 
 > **RA-01 es la decisión de seguridad más importante del proyecto y se toma a
@@ -174,12 +192,44 @@ bash experimentos/prueba-seguridad-01/prueba-fuga-datos.sh
 Los resultados quedan en
 `experimentos/prueba-seguridad-01/resultados/ps-01-resultados.txt`.
 
-### Resultados
+### Resultados — ejecución del 2026-11-06
 
-> ⬜ **PENDIENTE DE EJECUCIÓN.** La prueba está escrita y versionada; sus
-> resultados no se han registrado todavía. Esta sección se completa con la
-> salida real del script, no con una previsión. Las filas marcadas 🔶 en §4
-> dependen de ella.
+**Commit probado:** `f7895f4` · **Destino:** `http://localhost:8000`
+**Salida completa:** [`resultados/ps-01-resultados.txt`](../experimentos/prueba-seguridad-01/resultados/ps-01-resultados.txt)
+
+| Vector | Amenaza | Resultado medido | Veredicto |
+|---|---|---|---|
+| **A-01** | T-01 | HTTP **200** · **629.721 bytes** · **3602 registros** sin ninguna credencial | 🔴 **FUGA CONFIRMADA** |
+| **A-02** | — | Ruta descubierta desde la propia respuesta: `/static/1785780123_Captura` | 🔴 El listado entrega el índice de archivos |
+| **A-03** | T-02 | HTTP **404**, 19 bytes | ⚠️ **No concluyente** — ver nota |
+| **A-04** | T-03 | HTTP **200** con listado navegable del directorio | 🔴 **FUGA CONFIRMADA** |
+| **A-05** | T-04 | 4 intentos: `../.env` → 404 · `..%2f.env` → 301 · `../../back/.env` → 404 · `../test.db` → 404 | ✅ **Bloqueado** |
+| **A-06** | T-05 | `Access-Control-Allow-Origin: *` **y** `Access-Control-Allow-Credentials: true` en la misma respuesta | 🔴 **Configuración peligrosa confirmada** |
+
+**Vectores que confirmaron exposición: 3 de 6.**
+
+#### Nota sobre A-03: por qué el 404 no absuelve
+
+El 404 **no demuestra que exista control de acceso.** La ruta
+`/static/1785780123_Captura` sale de un registro creado en otra máquina; el
+archivo físico no está en este entorno porque `back/uploads/` es
+`.gitignore`. Es el hallazgo de reproducibilidad **F-05**, no una defensa.
+
+Lo prueba A-04 en la misma corrida: `GET /static/` devolvió **200 con listado
+navegable**, de modo que el manejador sirve sin pedir credencial alguna.
+Cualquier nombre que sí exista en el disco se entrega. **T-02 sigue vigente.**
+
+#### Dos hallazgos nuevos
+
+1. **El encadenamiento A-01 → A-02 → A-04 es un camino completo.** Una
+   petición sin credencial devuelve el listado; el listado contiene las rutas
+   de las imágenes; y el directorio además se puede enumerar. No hacen falta
+   tres vulnerabilidades: una sola basta porque la primera entrega el índice.
+
+2. **El volumen creció.** La medición de agosto registró 3302 registros y
+   557 kB; PS-01 midió **3602 registros y 629.721 bytes**. La respuesta crece
+   con la base, que es exactamente el comportamiento que la falta de
+   paginación predice (F-07, táctica T-07).
 
 ---
 

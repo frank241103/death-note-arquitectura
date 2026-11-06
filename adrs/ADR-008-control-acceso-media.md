@@ -31,9 +31,13 @@ archivos y, acto seguido, los archivos.
 causa de muerte (AC-02 del inventario). Es el activo más sensible del sistema y
 es el que menos protección tiene.
 
-**Amenazas asociadas:** T-02 (descarga no autorizada), T-03 (enumeración del
-directorio), T-04 (path traversal). T-02 está en el cuadrante
-probabilidad alta / impacto alto de la matriz.
+**Hecho confirmado por medición (PS-01, 2026-11-06).** `GET /static/` devolvió
+**HTTP 200 con un listado navegable del directorio**, sin credencial. La
+enumeración no era hipótesis.
+
+**Amenazas asociadas:** T-02 (descarga no autorizada) y T-03 (enumeración),
+ambas en el cuadrante probabilidad alta / impacto alto. T-04 (path traversal)
+quedó descartada por la misma prueba.
 
 ---
 
@@ -132,11 +136,17 @@ decide *dónde* irá el control, no lo activa.
 |---|---|---|
 | S-1 | El despliegue sigue siendo local, con datos ficticios | Cualquier exposición fuera de `localhost`, o datos reales. **Entonces RA-01 deja de ser aceptable y C-01 pasa a ser obligatorio** |
 | S-2 | La latencia del adaptador es despreciable frente al p95 actual (1114,69 ms) | Que una medición posterior al protocolo de `docs/experiment/02-protocolo.md` muestre un aumento superior al 10 % |
-| S-3 | `http.FileServer` sanea el path traversal, por lo que T-04 es de probabilidad baja | **Que la prueba PS-01 vector A-05 lo desmienta.** Entonces T-04 sube a probabilidad alta y la implementación pasa a ser urgente |
+| S-3 | ✅ **CONFIRMADO el 2026-11-06.** `http.FileServer` sanea el path traversal. PS-01 A-05: `../.env` → 404, `..%2f.env` → 301, `../../back/.env` → 404, `../test.db` → 404 | Cambiar el manejador por uno propio **sin** replicar el saneamiento. El adaptador de la alternativa C debe resolver contra un identificador, nunca concatenar el nombre recibido a una ruta |
 | S-4 | Las imágenes se identifican por un nombre generado por el servidor | Que se decida conservar el nombre enviado por el cliente: reabre T-09 |
 
-> **S-3 está pendiente de una prueba que ya está escrita.** Ejecutar PS-01 es
-> lo que convierte este supuesto en hecho o lo refuta.
+> **S-3 pasó de supuesto a hecho el 2026-11-06.** La prueba lo confirmó en
+> lugar de refutarlo, lo que baja T-04 de probabilidad baja a muy baja.
+>
+> **Pero esto cambia una responsabilidad del diseño:** hoy el saneamiento lo
+> aporta `http.FileServer`. Si la alternativa C lo sustituye por un manejador
+> propio, ese saneamiento **se pierde salvo que el adaptador lo reimplemente**.
+> Por eso el adaptador resuelve contra un identificador y nunca concatena el
+> nombre recibido a una ruta del sistema de archivos.
 
 ---
 
