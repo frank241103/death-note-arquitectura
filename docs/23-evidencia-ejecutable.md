@@ -1,0 +1,209 @@
+# 23 — Evidencia ejecutable consolidada
+
+**Fase:** IV · **Fecha:** 2026-11-06 · **Commit:** `25817da`
+
+> Índice único de todo lo que en este repositorio **se puede volver a
+> ejecutar**. Cada entrada dice qué comando la reproduce, dónde están sus
+> salidas crudas y qué decisión sostiene.
+
+---
+
+## 1. Resumen
+
+| Tipo | Cuántas | Estado |
+|---|:-:|---|
+| Mediciones de línea base | 4 corridas | ✅ Ejecutadas y publicadas |
+| Spikes con criterio prerregistrado | 1 | ✅ Ejecutado, veredicto validado |
+| Restricciones ejecutables (fitness functions) | 2 | ✅ Corriendo en CI, con prueba negativa |
+| Pruebas de seguridad | 1 | ⬜ Escrita, pendiente de ejecución |
+| Verificaciones de escenario con captura | 4 | ✅ Registradas |
+
+---
+
+## 2. Medición de línea base — ESC-01
+
+**Pregunta:** ¿cuánto tarda `GET /death` con la base sembrada?
+
+| | |
+|---|---|
+| Umbral prerregistrado | p95 < 500 ms, fijado en `docs/experiment/01-preregistro.md` §3 |
+| Resultado | **p95 = 1114,69 ms** → ❌ incumple |
+| Commit medido | `d3e06e6` |
+| Instrumento | k6 v2.2.0 |
+| Corridas | 4 (la nº 1 descartada y declarada en `02-protocolo.md` §9) |
+| Segunda máquina | `resultados/contexto-maquina-2.json`, `run-4.json` |
+| Integridad | `resultados/SHA256SUMS.txt`, 7 entradas |
+| Códigos de respuesta | `run-2.json` → `"status is 200"`, 1349 pass / 0 fail |
+
+**Reproducir:**
+```
+cd back && go run main.go                      # terminal 1
+cd experimentos/medicion-escenario-01           # terminal 2
+k6 run scripts/baseline.js
+```
+
+**Sostiene:** `ADR-002` (SQLite como línea base), `ADR-003` (k6 como
+instrumento), ESC-01 de `dossier/04`, fallo F-07.
+
+---
+
+## 3. Spike-01 — Acoplamiento síncrono con el almacén de archivos
+
+**Hipótesis:** la escritura síncrona de la imagen domina la latencia de
+`POST /death`.
+
+**Criterio prerregistrado, fijado antes de medir:** se valida si el tiempo
+atribuible a la escritura supera el **40 %** del p95.
+
+| Métrica (`http_req_duration`) | `POST /death` | `PATCH /deathUpdate` | Proporción |
+|---|---:|---:|---:|
+| p95 | **1730,45 ms** | **505,87 ms** | **70,8 %** |
+| Mediana | 45,95 ms | 21,57 ms | 53,1 % |
+| Promedio | 299,25 ms | 69,59 ms | 76,7 % |
+| Mínimo | 12,76 ms | 14,18 ms | — |
+
+**Veredicto: VALIDADA** (70,8 % > 40 %).
+**Commit medido:** `30a262d`.
+**Salidas crudas:** `experimentos/spike-01-integracion/resultados/*.json`.
+
+**Hallazgos secundarios:** `POST /death` cruzó su propio umbral de 1000 ms; la
+razón p95/mediana es **37,7×**; y el **mínimo de `POST` es menor que el de
+`PATCH`** — en ausencia de contención, escribir el archivo no cuesta
+prácticamente nada. La lectura que la evidencia soporta es encolamiento bajo
+concurrencia, no costo fijo.
+
+**Limitación declarada:** el 70,8 % es una **cota superior**, no el costo puro
+de escritura. `POST` también parsea `multipart/form-data`, hace `INSERT` en vez
+de `UPDATE` y transporta unas 4 veces más datos.
+
+**Reproducir:**
+```
+cd back && go run main.go
+cd experimentos/medicion-escenario-01
+k6 run scripts/seed-load.js   --summary-export=../spike-01-integracion/resultados/post-baseline.json
+k6 run scripts/patch-probe.js --summary-export=../spike-01-integracion/resultados/patch-probe.json
+```
+
+**Sostiene:** `ADR-007`.
+
+> **Corrección registrada.** Entre el 2026-10-09 y el 2026-10-23 este
+> documento contuvo una tabla comparativa síncrona/asíncrona cuyas cifras no
+> correspondían a ningún archivo de resultados. Se retiró y la constancia
+> quedó en `spike-01-integracion/README.md` §9, en lugar de borrarla en
+> silencio. Ver `docs/24-uso-ia.md` §4.
+
+---
+
+## 4. Restricciones ejecutables (fitness functions)
+
+Ambas corren en `.github/workflows/ci.yml`, en cada `push` a `main`/`develop`
+y en cada `pull_request` a `main`.
+
+### FF-01 — El dominio no depende de infraestructura
+
+| | |
+|---|---|
+| Decisión protegida | `ADR-005` (hexagonal) |
+| Propiedad | `back/api` y `back/models` no dependen de terceros ni de `net/http`, `os`, `net`, `database/sql` |
+| Estado medido | ✅ CUMPLE — cero dependencias externas |
+| Prueba negativa | Inyecta `import _ "net/http"` en `models/`, verifica la detección y borra el archivo |
+| Contrato | `docs/15-fitness-function-01.md` |
+
+```
+bash scripts/fitness/ff-01-dominio-sin-infraestructura.sh
+bash scripts/fitness/ff-01-dominio-sin-infraestructura.sh --prueba-negativa
+```
+
+### FF-02 — La dirección de dependencias respeta la matriz
+
+| | |
+|---|---|
+| Decisión protegida | `ADR-006` (límites de módulos) |
+| Propiedad | Ningún paquete de `kill` (`api`, `models`, `repository`) depende de `platform` (`server`, `config`, `logger`) |
+| Estado medido | ✅ CUMPLE |
+| Prueba negativa | Inyecta `import _ "backend-avanzada/config"` en `repository/` |
+| Contrato | `docs/19-fitness-function-02.md` |
+
+```
+bash scripts/fitness/ff-02-direccion-dependencias.sh
+bash scripts/fitness/ff-02-direccion-dependencias.sh --prueba-negativa
+```
+
+**Por qué son dos y no una repetida:** protegen decisiones distintas
+(`ADR-005` vs `ADR-006`), miran grafos distintos (dependencias externas vs
+dirección interna) y pueden fallar por separado. Si `repository` importara
+`config`, FF-01 seguiría verde y FF-02 fallaría.
+
+---
+
+## 5. Prueba de seguridad PS-01 — Intento de fuga de datos
+
+**Estado:** ⬜ **Escrita y versionada, pendiente de ejecución.**
+
+Seis vectores: listado sin credencial, descubrimiento de rutas, descarga de
+imagen, enumeración de directorio, path traversal y CORS con credenciales.
+
+**Ejecutar:**
+```
+cd back && go run main.go
+bash experimentos/prueba-seguridad-01/prueba-fuga-datos.sh
+```
+
+Salida en `experimentos/prueba-seguridad-01/resultados/ps-01-resultados.txt`.
+
+**De qué depende:** el supuesto S-3 de `ADR-008` y las filas 🔶 de
+`docs/20-seguridad.md` §4 (T-03, T-04, T-09).
+
+---
+
+## 6. Verificaciones de escenario con captura
+
+| Escenario | Qué demuestra | Captura |
+|---|---|---|
+| ESC-02 | 404 en `/static/` desde un clon limpio (F-05) | `esc-02-static-404.png.png` |
+| ESC-03 | El proceso termina al arrancar sin `.env` (F-02) | `esc-03-sin-env.png.png` |
+| ESC-04 | Pánico con motor de base no soportado (F-03) | `esc-04-mongodb-panic.png.png` |
+| ESC-05 | `POST /death` rechaza JSON con 400 (F-08) | `esc-05-rechazo-400.png.png` |
+
+En `experimentos/verificacion-escenarios/`.
+
+---
+
+## 7. Lo que NO hay como evidencia ejecutable
+
+Se declara para que nadie lo suponga:
+
+| # | Qué falta | Por qué |
+|---|---|---|
+| **N-01** | Experimento de crecimiento con carga aumentada | No se ejecutó un barrido de VUs. Lo medido son dos puntos de carga fija (ESC-01 y el spike), no una curva |
+| **N-02** | Táctica medida antes/después | Ninguna táctica de `docs/17` está implementada: no hay "después" que medir |
+| **N-03** | Costo de la capa de seguridad sobre el p95 | Ningún control está implementado (`docs/20` §10) |
+| **N-04** | Pruebas unitarias | El proyecto no tiene ninguna. El CI compila y verifica restricciones; no ejecuta tests |
+| **N-05** | Ejecución del despliegue en contenedores | Nunca se levantó (`docs/21` §1.2) |
+
+> **N-01 y N-02 corresponden a la semana 11 del sílabo.** Se declaran como
+> ausentes en lugar de presentar las mediciones existentes como si cubrieran
+> ese entregable.
+
+---
+
+## 8. Cómo reproducir todo desde cero
+
+```
+git clone https://github.com/frank241103/death-note-arquitectura
+cd death-note-arquitectura
+
+cp back/.env.example back/.env          # sin esto el backend no arranca (F-02)
+mkdir -p back/uploads                   # sin esto /static/ da 404 (F-05)
+
+cd back && go run main.go               # terminal 1, escucha en :8000
+
+# terminal 2
+bash scripts/fitness/ff-01-dominio-sin-infraestructura.sh
+bash scripts/fitness/ff-02-direccion-dependencias.sh
+cd experimentos/medicion-escenario-01 && k6 run scripts/baseline.js
+bash ../prueba-seguridad-01/prueba-fuga-datos.sh
+```
+
+Los dos primeros pasos **son obligatorios** y son, en sí mismos, los fallos
+F-02 y F-05 documentados.

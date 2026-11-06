@@ -30,7 +30,7 @@
 - **Remoto upstream:** git remote -v registra ambos: origin (nuestro trabajo) y upstream (autor original)
 - **Responsabilidad:** Análisis arquitectónico, medición de línea base, documentación de hallazgos
 
-**Evidencia:** [README.md sección 2](../README.md#2-sistema-base-adoptado), [adrs/ADR-001](./adrs/ADR-001-adopcion-protocolo.md)
+**Evidencia:** [README.md sección 2](../README.md#2-sistema-base-adoptado), [adrs/ADR-001](../adrs/ADR-001-adopcion-opcion-c.md)
 
 ### Tecnologías Verificadas (1 minuto 30 segundos)
 
@@ -57,7 +57,7 @@
 - Plazo de semestre: medición acotada a lo instrumental (k6)
 - Máquina compartida: k6, backend, SQLite comparten recursos
 
-**Impacto:** Decisiones documentadas en [adrs/ADR-002 (SQLite)](./adrs/ADR-002-sqlite-baseline.md), [adrs/ADR-003 (k6)](./adrs/ADR-003-k6-medicion.md)
+**Impacto:** Decisiones documentadas en [adrs/ADR-002 (SQLite)](../adrs/ADR-002-sqlite-baseline.md), [adrs/ADR-003 (k6)](../adrs/ADR-003-k6-medicion.md)
 
 ---
 
@@ -95,7 +95,7 @@
 
 **Datos medibles:** 8 riesgos identificados, 3 categorizados como Seguridad (AC-1)
 
-**Evidencia:** [dossier/01-contexto-sistema.md](./01-contexto-sistema.md) (R-01, R-05, R-06), [adrs/ADR-004 sección justificación](./adrs/ADR-004-priorizacion-atributos.md#%EF%B8%8F-seguridad--rendimiento)
+**Evidencia:** [dossier/01-contexto-sistema.md](./01-contexto-sistema.md) (R-01, R-05, R-06), [adrs/ADR-004 sección justificación](../adrs/ADR-004-priorizacion-atributos.md#%EF%B8%8F-seguridad--rendimiento)
 
 ### Ranking de Atributos (1 minuto)
 
@@ -108,7 +108,7 @@
 
 **Trade-off declarado:** Rendimiento es MENOS prioritario que Seguridad, pero es lo MEDIBLE en plazo del semestre. Medimos rendimiento (ESC-01) con conciencia de su menor prioridad.
 
-**Evidencia:** [adrs/ADR-004-priorizacion-atributos.md](./adrs/ADR-004-priorizacion-atributos.md) (decisión con justificación completa)
+**Evidencia:** [adrs/ADR-004-priorizacion-atributos.md](../adrs/ADR-004-priorizacion-atributos.md) (decisión con justificación completa)
 
 ### 8 Riesgos con Evidencia (1 minuto 30 segundos)
 
@@ -157,7 +157,7 @@
 
 **Justificación adicional:** Es lo medible CON INSTRUMENTAL disponible (k6) en plazo del semestre. Seguridad es prioritaria pero no instrumentable en 2 semanas.
 
-**Evidencia:** [dossier/04-escenarios-calidad.md sección 1.3](./04-escenarios-calidad.md#13-línea-base-por-qué-esc-01-y-no-esc-02-a-esc-05), [adrs/ADR-003](./adrs/ADR-003-k6-medicion.md)
+**Evidencia:** [dossier/04-escenarios-calidad.md sección 1.3](./04-escenarios-calidad.md#13-línea-base-por-qué-esc-01-y-no-esc-02-a-esc-05), [adrs/ADR-003](../adrs/ADR-003-k6-medicion.md)
 
 ### Umbral Prerregistrado (1 minuto)
 
@@ -171,7 +171,7 @@
 
 3. **Preserva integridad del experimento:** Umbral NO será ajustado después de medir. Si falla, declaramos problema de diseño, no que "el umbral era muy estricto".
 
-**Archivos:** [dossier/04-escenarios-calidad.md sección 1.2](./04-escenarios-calidad.md#12-justificación-del-umbral-500-ms), [adrs/ADR-004](./adrs/ADR-004-priorizacion-atributos.md)
+**Archivos:** [dossier/04-escenarios-calidad.md sección 1.2](./04-escenarios-calidad.md#12-justificación-del-umbral-500-ms), [adrs/ADR-004](../adrs/ADR-004-priorizacion-atributos.md)
 
 ### Ejecución: 3 Corridas, 1 Warmup + 2 Válidas (1 minuto)
 
@@ -231,7 +231,7 @@ La función `handleGetAllKills()` en [back/server/kill_handlers.go:35](../back/s
 
 **P1:** "¿Cómo justifican que usan un proyecto externo (opción C) en lugar de crear código propio?"
 
-**Respuesta en:** [README.md sección 2](../README.md#2-sistema-base-adoptado), [adrs/ADR-001-adopcion-protocolo.md](./adrs/ADR-001-adopcion-protocolo.md)
+**Respuesta en:** [README.md sección 2](../README.md#2-sistema-base-adoptado), [adrs/ADR-001-adopcion-protocolo.md](../adrs/ADR-001-adopcion-opcion-c.md)
 
 ---
 
@@ -245,7 +245,7 @@ La función `handleGetAllKills()` en [back/server/kill_handlers.go:35](../back/s
 
 **P3:** "¿Por qué Seguridad es prioridad 1? ¿No es un sistema de juego?"
 
-**Respuesta en:** [adrs/ADR-004 sección justificación](./adrs/ADR-004-priorizacion-atributos.md#%EF%B8%8F-seguridad--rendimiento) — argumento de daño a S2 (víctima), derechos de privacidad
+**Respuesta en:** [adrs/ADR-004 sección justificación](../adrs/ADR-004-priorizacion-atributos.md#%EF%B8%8F-seguridad--rendimiento) — argumento de daño a S2 (víctima), derechos de privacidad
 
 ---
 
@@ -273,7 +273,7 @@ La función `handleGetAllKills()` en [back/server/kill_handlers.go:35](../back/s
 
 **P7:** "¿Por qué miden Rendimiento (ESC-01) si Seguridad es prioridad 1?"
 
-**Respuesta en:** [dossier/04-escenarios-calidad.md sección 1.3](./04-escenarios-calidad.md#13-línea-base-por-qué-esc-01-y-no-esc-02-a-esc-05), [adrs/ADR-004](./adrs/ADR-004-priorizacion-atributos.md) — tensión deliberada: rendimiento es prioritario 3 pero es lo medible en plazo
+**Respuesta en:** [dossier/04-escenarios-calidad.md sección 1.3](./04-escenarios-calidad.md#13-línea-base-por-qué-esc-01-y-no-esc-02-a-esc-05), [adrs/ADR-004](../adrs/ADR-004-priorizacion-atributos.md) — tensión deliberada: rendimiento es prioritario 3 pero es lo medible en plazo
 
 ---
 
