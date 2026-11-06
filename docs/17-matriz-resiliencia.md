@@ -18,9 +18,9 @@ evidencia suficiente"*. Para que eso no ocurra aquí, cada fila lleva un
 | 🔶 **PROPUESTA** | La táctica está elegida y su criterio de prueba está definido, pero **no está implementada**. No hay evidencia y no se presenta como si la hubiera |
 | ⬜ **CANDIDATA** | Se enuncia como opción, sin que el equipo la haya seleccionado todavía |
 
-**Hoy una sola fila está VALIDADA.** El resto son propuestas. Se declara así
-a propósito: el enunciado acepta tácticas declaradas como propuesta, y no
-acepta tácticas presentadas como probadas sin serlo.
+**Hoy dos filas están VALIDADAS** (T-04 y T-09). El resto son propuestas. Se
+declara así a propósito: el enunciado acepta tácticas declaradas como
+propuesta, y no acepta tácticas presentadas como probadas sin serlo.
 
 ---
 
@@ -31,7 +31,7 @@ acepta tácticas presentadas como probadas sin serlo.
 | **T-01** | **F-01** — `http.Server` sin timeouts | Ninguna conexión permanece abierta más de 15 s sin enviar datos | *Limitar exposición*: fijar `ReadTimeout`, `WriteTimeout` e `IdleTimeout` en la construcción del servidor | Abrir una conexión que envíe cabeceras a 1 byte/s; el servidor debe cerrarla antes de 15 s | 🔶 **PROPUESTA** — `back/server/server.go` sin modificar. Es además la condición que añadió el mini-comité 1 |
 | **T-02** | **F-02** — arranque imposible sin `.env` | El backend arranca en un clon limpio o falla con un mensaje que diga qué variable falta y cómo obtenerla | *Degradación controlada*: sustituir `logger.Fatal` por valores por defecto para SQLite y un mensaje accionable | `git clone` limpio + `go run main.go` sin `.env`: arranca, o imprime la variable faltante y el archivo de ejemplo | 🔶 **PROPUESTA** — existe `.env.example`, pero el código sigue abortando |
 | **T-03** | **F-03** — `switch` sin `default` | Un motor de base no soportado produce un error nombrado, nunca un `nil pointer` | *Detección de excepción*: añadir caso `default` que devuelva un error con el valor recibido y la lista de valores válidos | Poner `"database": "mongodb"` en `config.json`: el proceso debe terminar con mensaje explícito y código de salida distinto de un pánico | 🔶 **PROPUESTA** |
-| **T-04** | **F-04** — `/static/` sin control de acceso | Ninguna ruta sirve archivos sin pasar por una comprobación de autorización | *Autorizar actores*: interponer un middleware delante del `FileServer`, a través del puerto `AlmacenDeImagenes` del ADR-005 | `GET /static/<archivo>` sin credencial → `401`; con credencial válida → `200` | 🔶 **PROPUESTA** — el puerto está decidido en ADR-005; el adaptador no está escrito |
+| **T-04** | **F-04** y **F-11** — `/static/` sin control de acceso | Ninguna ruta sirve archivos sin pasar por autorización | *Autorizar actores*: middleware de token delante del `FileServer` | `GET /static/<archivo>` sin credencial → `401`; con credencial válida → `200` | ✅ **VALIDADA el 2026-11-06** — `back/server/media_auth.go`, 6 pruebas unitarias que cubren ambos casos. Desactivada por defecto (RA-01) |
 | **T-05** | **F-05** — 404 en clon limpio | El sistema recién clonado sirve `/static/` sin pasos manuales | *Reparación por reintroducción de estado*: crear `uploads/` al arrancar (ya hay `os.MkdirAll` en el handler; falta en el arranque) y versionar un `.gitkeep` | `git clone` limpio + arrancar + `GET /static/` → distinto de 404 por carpeta ausente | 🔶 **PROPUESTA** |
 | **T-06** | **F-06** — CORS `["*"]` con credenciales | El servidor no acepta credenciales desde orígenes no declarados | *Limitar acceso*: lista explícita de orígenes, o `AllowCredentials: false` | Petición cruzada con credenciales desde un origen no listado → rechazada | 🔶 **PROPUESTA** |
 | **T-07** | **F-07** — `GET /death` sin paginación | El tamaño de respuesta de `GET /death` no crece con el número de registros | *Limitar el tamaño del conjunto*: parámetros `limit` y `offset` en el repositorio, con tope por defecto | Repetir ESC-01 con la base sembrada: p95 < 500 ms y respuesta < 100 kB. El protocolo ya existe en `docs/experiment/02-protocolo.md` | 🔶 **PROPUESTA** — la línea base contra la que comparar ya está medida (4 corridas) |
@@ -51,7 +51,7 @@ declaración explícita de que no se midió.
 | T-01 | Una petición legítima muy lenta (red mala, archivo grande) puede cortarse | 🔶 No medido. El umbral de 15 s se propone, no se derivó de ninguna medición de la distribución real de duraciones |
 | T-02 | Arrancar con valores por defecto puede ocultar una configuración mal puesta en un entorno real | ✅ Fundamentado: es el mismo mecanismo que produjo F-03 |
 | T-03 | Ninguno apreciable: añade una rama a un `switch` | ✅ |
-| T-04 | Introduce latencia por petición de archivo. El ADR-005 §7 lo anticipa y lo declara **no medido** | 🔶 Declarado como no medido en el propio ADR |
+| T-04 | Introduce latencia por petición de archivo | ✅ **MEDIDO el 2026-11-06.** Ver `docs/20-seguridad.md` §10. Deja de ser un costo declarado para ser un costo conocido |
 | T-05 | Ninguno apreciable | ✅ |
 | T-06 | Rompe clientes que hoy funcionan desde orígenes arbitrarios | ✅ Fundamentado: es el efecto buscado |
 | T-07 | El frontend debe paginar; hoy espera la lista completa (`front/src/pages/death-note-list/`) | ✅ Verificado por lectura del código del frontend |

@@ -376,7 +376,7 @@ srv := &http.Server{
 
 | # | Riesgo | Severidad | Verificado |
 |---|--------|-----------|-----------|
-| R-01 | Sprintf sin args expone contraseña | 🔴 Alta | ✅ |
+| R-01 | Sprintf sin args expone contraseña | 🔴 Alta | ✅ → 🟢 **CORREGIDO 2026-11-06** (control C-05, ver `docs/16` §7) |
 | R-02 | godotenv.Load() Fatal antes de evaluar BD | 🟠 Media | ✅ |
 | R-03 | config.json modificado, .env con vars PostgreSQL | 🟠 Media | ✅ |
 | R-04 | Switch sin default → nil panic | 🔴 Alta | ✅ |
